@@ -3,23 +3,23 @@ const router = express.Router();
 const { economicYearControllers } = require("../../controllers/master");
 const {
   setupEconomicYearValidation,
-  adDateToCustomDateValidation,
+ 
 } = require("../../middlewares/validation/master");
-const auth = require("../../middlewares/auth/auth");
-const { preauthorize } = require("../../utils/preAuthorize");
+const auth = require("../../middlewares/auth");
+// const { preauthorize } = require("../../utils/preAuthorize");
 
 router.post(
   "/economicyearsetup",
   auth,
-  preauthorize("create_functional_year"),
-  setupEconomicYearValidation,
+  // preauthorize("create_functional_year"),
+  setupEconomicYearValidation.setupEconomicYearValidation,
   economicYearControllers.setupEconomicYear
 );
 
 router.get(
   "/addatetocustomdate",
   auth,
-  adDateToCustomDateValidation,
+  setupEconomicYearValidation.adDateToCustomDateValidation,
   economicYearControllers.adDateToCustomDate
 );
 
