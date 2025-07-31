@@ -86,6 +86,8 @@ const getLedgerPaginationValidation = (req, res, next) => {
 
 
 const saveLedgerValidation = (req, res, next) => {
+    console.log(req.body);
+    
     const { error } = saveLedgerValidationSchema.validate(req.body)
     if (error) {
         return next(error)

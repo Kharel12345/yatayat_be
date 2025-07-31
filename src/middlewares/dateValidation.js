@@ -1,4 +1,4 @@
-const { economicYearServices } = require("../services");
+const  economicYearServices  = require("../services/master/economic_year.service");
 
 //check wheather the date lies between the provided functional_year_id or not
 let validateBsDateAgainstFunctionalYear = async (functional_year_id, date) => {

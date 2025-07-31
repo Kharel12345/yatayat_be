@@ -10,10 +10,10 @@ const {
   validateAdDateAgainstFunctionalYear,
   isBackDate,
 } = require("../../middlewares/dateValidation");
-const { ledgerServices } = require("../../services/accounting");
 const { getCurrentValue } = require("../../utils/dbUtils")
 
 const logger = require("../../config/winstonLoggerConfig");
+const { ledgerServices } = require("../../services/accounting");
 
 const getledgerGrouplist = async (req, res, next) => {
   try {
@@ -56,10 +56,12 @@ const saveLedger = async (req, res, next) => {
     } = req.body;
 
     let calendar = new Nepali_Calendar();
+ 
+    
     let opening_balance_date_ad = calendar.BSToADConvert(
       opening_balance_date_bs
     );
-
+    
     let isValidDate = await validateAdDateAgainstFunctionalYear(
       functional_year_id,
       opening_balance_date_ad
