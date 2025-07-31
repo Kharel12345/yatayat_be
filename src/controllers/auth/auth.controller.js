@@ -80,8 +80,22 @@ const refresh = asyncHandler(async (req, res, next) => {
     return res.status(200).json(result)
 })
 
+const getUserDetails = asyncHandler(async (req, res, next) => {
+    const result = await authServices.getUserDetails()
+    return res.status(200).json(result)
+})
+
+const getUserDetailsById = asyncHandler(async (req, res, next) => {
+    const user_id = req.user.user_id;
+
+    const result = await authServices.getUserDetailsById(user_id)
+    return res.status(200).json(result)
+})
+
 module.exports = {
     login,
     logout,
-    refresh
+    refresh,
+    getUserDetails,
+    getUserDetailsById
 }
