@@ -7,29 +7,17 @@ const axios = require('axios')
 const RefreshToken = require('../../../models/refreshToken.model')
 const { Op } = require('sequelize');
 
-const login = async (username, password, captchaResponse) => {
+const findUser = async (username) => {
+    return await User.findOne({ where: { username } });
+};
 
-    //verify captcha response
-    const captchaVerification = await verifyCaptchaResponse(captchaResponse)
-    if (!captchaVerification) {
-        return CustomErrorHandler.inValidCaptchaResponse()
-    }
+const validatePassword = async (password, user) => {
+    return await bcrypt.compare(password, user.password);
+};
 
-    //validate username and password
-    const user = await User.findOne({ where: { username } })
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-        return CustomErrorHandler.wrongCredentials()
-    }
-
-    //generate access token and refresh token 
-    const payload = { user_id: user.id, username, email: user.email }
-    const access_token = jwtServices.generateToken(payload, JWT_SECRET, JWT_EXPIRY)
-    const refresh_token = jwtServices.generateToken(payload, REFRESH_SECRET, REFRESH_EXPIRY)
-
-    //save refresh token in the database
-    await RefreshToken.create({ user_id: user.id, token: refresh_token })
-
-    return { access_token, refresh_token }
+const createRefreshToken = async (user_id, refresh_token) => {
+    await RefreshToken.create({ user_id, token: refresh_token });
+    return refresh_token;
 }
 
 const verifyCaptchaResponse = async (captchaResponse) => {
@@ -48,14 +36,14 @@ const logout = async (refresh_token) => {
 
 const refresh = async (refresh_token) => {
     const token = await RefreshToken.findOne({ where: { token: refresh_token } })
-    if (token == null) return CustomErrorHandler.unAthorized()
+    if (token == null) return CustomErrorHandler.unAuthorized()
 
     //verify the refresh token 
     const { user_id, username, email } = jwtServices.verify(refresh_token, REFRESH_SECRET)
 
     //check if user exists 
     const user = await User.findOne({ where: { id: user_id } })
-    if (user == null) return CustomErrorHandler.unAthorized('No user found')
+    if (user == null) return CustomErrorHandler.unAuthorized('No user found')
 
     //generate new tokens
     let payload = { user_id, username, email }
@@ -79,7 +67,10 @@ const refresh = async (refresh_token) => {
 }
 
 module.exports = {
-    login,
     logout,
-    refresh
+    refresh,
+    findUser,
+    verifyCaptchaResponse,
+    validatePassword,
+    createRefreshToken
 }
