@@ -1,4 +1,4 @@
-const  economicYearServices  = require("../services/master/economic_year.service");
+const economicYearServices = require("../services/master/economic_year.service");
 
 //check wheather the date lies between the provided functional_year_id or not
 let validateBsDateAgainstFunctionalYear = async (functional_year_id, date) => {
@@ -7,8 +7,8 @@ let validateBsDateAgainstFunctionalYear = async (functional_year_id, date) => {
     functional_year_id
   );
   let functional_year_start_bs =
-    functional_year_info[0].functional_year_start_bs;
-  let functional_year_end_bs = functional_year_info[0].functional_year_end_bs;
+    functional_year_info.functional_year_start_bs;
+  let functional_year_end_bs = functional_year_info.functional_year_end_bs;
 
   const currentDate = new Date(date);
   const startDate = new Date(functional_year_start_bs);
@@ -18,13 +18,15 @@ let validateBsDateAgainstFunctionalYear = async (functional_year_id, date) => {
 };
 
 let validateAdDateAgainstFunctionalYear = async (functional_year_id, date) => {
+
   //get functional_year_info
   let functional_year_info = await economicYearServices.getEconomicYearInfo(
     functional_year_id
   );
+
   let functional_year_start_ad =
-    functional_year_info[0].functional_year_start_ad;
-  let functional_year_end_ad = functional_year_info[0].functional_year_end_ad;
+    functional_year_info.functional_year_start_ad;
+  let functional_year_end_ad = functional_year_info.functional_year_end_ad;
 
   const currentDate = new Date(date);
   const startDate = new Date(functional_year_start_ad);

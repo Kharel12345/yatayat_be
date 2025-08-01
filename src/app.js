@@ -7,7 +7,12 @@ const logger = require("./config/winstonLoggerConfig");
 const errorHandler = require("./utils/errorHandler");
 const { authRoutes } = require("./routes");
 const { ledgerRoutes } = require("./routes/Accounting");
-const { economicYearRoute, smsSettingInfoRoute } = require("./routes/master");
+const {
+  economicYearRoute,
+  smsSettingInfoRoute,
+  vechileCategoryRoutes,
+  vechileSubCategoryRoutes,
+} = require("./routes/master");
 
 const allowedOrigins = process.env.CORS_ORIGINS?.split(",") || [];
 const corsOptions = {
@@ -36,6 +41,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/accounting", ledgerRoutes);
 app.use("/api/master", economicYearRoute);
 app.use("/api/master", smsSettingInfoRoute);
+app.use("/api/master", vechileCategoryRoutes);
+app.use("/api/master", vechileSubCategoryRoutes);
 
 app.use(errorHandler);
 

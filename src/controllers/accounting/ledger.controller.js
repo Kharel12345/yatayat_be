@@ -83,18 +83,18 @@ const saveLedger = async (req, res, next) => {
     }
 
     //check for backdate
-    let allow_backdate_entry_ledger =
-      req.permission["ledger"] &&
-      req.permission["ledger"].includes("allow_backdate_entry_ledger");
-    if (!allow_backdate_entry_ledger) {
-      let result = isBackDate(opening_balance_date_ad);
-      if (result) {
-        return res.status(400).json({
-          status: false,
-          message: "You do not have permission for back date entry",
-        });
-      }
-    }
+    // let allow_backdate_entry_ledger =
+    //   req.permission["ledger"] &&
+    //   req.permission["ledger"].includes("allow_backdate_entry_ledger");
+    // if (!allow_backdate_entry_ledger) {
+    //   let result = isBackDate(opening_balance_date_ad);
+    //   if (result) {
+    //     return res.status(400).json({
+    //       status: false,
+    //       message: "You do not have permission for back date entry",
+    //     });
+    //   }
+    // }
 
     const jsonObject = {
       ledger_name,

@@ -21,7 +21,7 @@ class FunctionalYear extends Model {
   }
 
   static async getEconomicYearInfo(id) {
-    return await FunctionalYear.findByPk(id);
+    return await FunctionalYear.findOne({ where: { functional_year_id: id } });
   }
 }
 

@@ -38,7 +38,7 @@ const getActiveEconomicYearInfo = async () => {
 
 const getEconomicYearInfo = async (functional_year_id) => {
     try {
-        let result = await FunctionalYear.getEconomicYearInfo(functional_year_id)
+        let result = await FunctionalYear.getEconomicYearInfo(functional_year_id);
         return result
     } catch (error) {
         throw new Error(error)
