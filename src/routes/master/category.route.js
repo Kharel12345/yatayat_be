@@ -7,7 +7,7 @@ const auth = require("../../middlewares/auth");
 router.post("/createcategory", auth, categoryController.createCategory);
 router.get("/getallcategories", auth, categoryController.getAllCategories);
 router.get("/getcategories:id", auth, categoryController.getCategoryById);
-router.put("/updatecategory:id", auth, categoryController.updateCategory);
+router.put("/updatecategory/:id", auth, categoryController.updateCategory);
 router.delete("/deletecategory:id", auth, categoryController.deleteCategory);
 
 module.exports = router;
