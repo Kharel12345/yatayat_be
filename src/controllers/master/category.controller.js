@@ -115,10 +115,23 @@ const deleteCategory = async (req, res, next) => {
   }
 };
 
+const getAllCategoriesList = async (req, res, next) => {
+  try {
+    const categories = await categoryService.getAllCategoriesList();
+    res.json(categories);
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+};
+
 module.exports = {
   createCategory,
   updateCategory,
   getAllCategories,
   getCategoryById,
   deleteCategory,
+  getAllCategoriesList
 };

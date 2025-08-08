@@ -70,11 +70,19 @@ const deleteCategory = (id) => {
   });
 };
 
+const getAllCategoriesList = async () => {
+  return await Category.findAll({
+    attributes: ['id', 'name'],
+  });
+};
+
+
 module.exports = {
   createCategory,
   deleteCategory,
   updateCategory,
   getAllCategories,
   getCategoryById,
-  checkCategoryNameAvailable
+  checkCategoryNameAvailable,
+  getAllCategoriesList
 };
