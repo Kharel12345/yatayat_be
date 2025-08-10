@@ -120,12 +120,12 @@ class SubCategoryService {
     return this.getSubCategoryById(categoryId, subCategoryId);
   }
 
-  async deleteSubCategory(categoryId, subCategoryId) {
+  async deleteSubCategory(id) {
     return SubCategory.destroy({
       where: {
-        id: subCategoryId,
-        categoryId,
+        id
       },
+      force: true
     });
   }
 }

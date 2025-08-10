@@ -1,7 +1,6 @@
 // models/BranchInfo.js
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const UserBranchInfo = require('./userbranch.model');
+const sequelize = require('../src/config/database');
 
 const BranchInfo = sequelize.define('BranchInfo', {
   branch_id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -12,7 +11,6 @@ const BranchInfo = sequelize.define('BranchInfo', {
   timestamps: false
 });
 
-// BranchInfo.hasMany(UserBranchInfo, { foreignKey: 'branch_id' });
 
 
 module.exports = BranchInfo;

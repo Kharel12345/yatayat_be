@@ -73,15 +73,18 @@ const updateSubCategory = async (req, res, next) => {
 
 const deleteSubCategory = async (req, res, next) => {
   try {
-    const deleted = await subCategoryService.deleteSubCategory(
-      req.query.categoryId,
-      req.params.id
-    );
+    const deleted = await subCategoryService.deleteSubCategory(req.params.id);
 
     if (!deleted)
-      return res.status(404).json({ error: "Sub-category not found" });
+      return res.status(404).json({
+        status: false,
+        message: "Sub-category not found"
+      });
 
-    res.status(204).send();
+    res.status(204).json({
+      status: true,
+      message: "Sub-category deleted successfully",
+    });
   } catch (error) {
     logger.error(
       `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`

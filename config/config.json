@@ -1,7 +1,7 @@
 {
   "development": {
-    "username": "development",
-    "password": "Admin@admin123",
+    "username": "root",
+    "password": "P@ssw0rd",
     "database": "yatayat_system",
     "host": "127.0.0.1",
     "dialect": "mysql"

@@ -34,7 +34,9 @@ app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
 
+// Load database configuration and models
 require("./config/database");
+require("../models"); // Load Sequelize models
 
 //routes here
 app.use("/api/auth", authRoutes);

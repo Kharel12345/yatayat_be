@@ -85,7 +85,7 @@ const getEconomicYearList = async (req, res, next) => {
           ),
         };
       }
-      return economicYear;
+      return economicYear.dataValues;
     });
     res.status(200).json(SUCCESS_API_FETCH(economicYearList));
   } catch (error) {

@@ -16,20 +16,38 @@ if (config.use_env_variable) {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
-    );
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
+// Function to recursively load models from directories
+const loadModels = (dir) => {
+  const items = fs.readdirSync(dir);
+
+  items.forEach(item => {
+    const fullPath = path.join(dir, item);
+    const stat = fs.statSync(fullPath);
+
+    if (stat.isDirectory()) {
+      // Recursively load models from subdirectories
+      loadModels(fullPath);
+    } else if (
+      item.indexOf('.') !== 0 &&
+      item !== basename &&
+      item.slice(-3) === '.js' &&
+      item.indexOf('.test.js') === -1 &&
+      item.endsWith('.model.js') // Only load model files
+    ) {
+      try {
+        const model = require(fullPath);
+        if (model && model.name) {
+          db[model.name] = model;
+        }
+      } catch (error) {
+        console.warn(`Warning: Could not load model from ${fullPath}:`, error.message);
+      }
+    }
   });
+};
+
+// Load all models
+loadModels(__dirname);
 
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
