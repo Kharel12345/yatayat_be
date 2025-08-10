@@ -6,7 +6,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:seed": "sequelize-cli db:seed:all",
+    "db:reset": "sequelize-cli db:drop && sequelize-cli db:create && sequelize-cli db:migrate && sequelize-cli db:seed:all",
+    "db:backup": "mysqldump -u root -pP@ssw0rd yatayat_system > backup_$(date +%Y%m%d_%H%M%S).sql",
+    "db:deploy:check": "NODE_ENV=production node -e \"require('./src/config/database')\"",
+    "deploy:preflight": "npm run db:backup && npm run db:migrate",
+    "db:check-structure": "node fix-database-structure.js"
   },
   "author": "Prasanna Kumar Baniya",
   "license": "ISC",

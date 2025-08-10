@@ -1,22 +1,30 @@
 // // models/user.js
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const UserBranchInfo = require('./userbranch.model');
+const sequelize = require('../src/config/database');
 
 const User = sequelize.define('User', {
-  user_id: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
   },
+  username: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: false
+  },
+  email: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: false
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   name: DataTypes.STRING,
   address: DataTypes.STRING,
   contact: DataTypes.STRING,
-  username: {
-    type: DataTypes.STRING,
-    unique: true
-  },
-  password: DataTypes.STRING,
   status: DataTypes.INTEGER,
   user_type: DataTypes.STRING,
   created_by: DataTypes.INTEGER
@@ -24,8 +32,6 @@ const User = sequelize.define('User', {
   tableName: 'user',
   timestamps: false
 });
-
-// User.hasMany(UserBranchInfo, { foreignKey: 'user_id' });
 
 
 module.exports = User;

@@ -22,8 +22,8 @@ const validatePassword = async (password, user) => {
   return await bcrypt.compare(password, user.password);
 };
 
-const createRefreshToken = async (user_id, refresh_token) => {
-  await RefreshToken.create({ user_id, token: refresh_token });
+const createRefreshToken = async (userId, refresh_token) => {
+  await RefreshToken.create({ user_id: userId, token: refresh_token });
   return refresh_token;
 };
 

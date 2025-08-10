@@ -1,8 +1,6 @@
 // models/UserBranchInfo.js
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const User = require('./user.model');
-const BranchInfo = require('./branch.model');
+const sequelize = require('../src/config/database');
 
 const UserBranchInfo = sequelize.define('UserBranchInfo', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -15,9 +13,6 @@ const UserBranchInfo = sequelize.define('UserBranchInfo', {
   timestamps: false
 });
 
-// UserBranchInfo.belongsTo(User, { foreignKey: 'user_id' });
-
-// UserBranchInfo.belongsTo(BranchInfo, { foreignKey: 'branch_id' });
 
 
 module.exports = UserBranchInfo;

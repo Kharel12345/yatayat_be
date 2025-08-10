@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../../config/database');
+const sequelize = require('../../src/config/database');
 
 const LedgerGroup = sequelize.define('LedgerGroup', {
     id: {

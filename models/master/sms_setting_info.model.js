@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../../config/database');
+const sequelize = require('../../src/config/database');
 
 class SmsSettingInfo extends Model {
   static async createOrUpdate(data) {

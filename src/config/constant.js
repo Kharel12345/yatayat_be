@@ -3,10 +3,6 @@ require('dotenv').config()
 const {
     PORT,
     NODE_ENV,
-    DB_HOST,
-    DB_USERNAME,
-    DB_PASSWORD,
-    DB_NAME,
     JWT_SECRET,
     JWT_EXPIRY,
     REFRESH_SECRET,
@@ -19,10 +15,6 @@ const {
 module.exports = {
     PORT,
     NODE_ENV,
-    DB_HOST,
-    DB_USERNAME,
-    DB_PASSWORD,
-    DB_NAME,
     JWT_SECRET,
     JWT_EXPIRY,
     REFRESH_SECRET,
