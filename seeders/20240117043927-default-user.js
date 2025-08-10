@@ -12,10 +12,20 @@ module.exports = {
      *   isBetaMember: false
      * }], {});
     */
-    await queryInterface.bulkInsert('user', [{
+    // await queryInterface.bulkInsert('user', [{
+    //   username: 'admin',
+    //   email: 'admin@admin.com',
+    //   password: '$2y$10$WGCyK6Abg3bWSiFKpU6e1u5ts52yBiKGsPeTUEUHFOs2dNYq7tGKu'
+    // }], {});
+      await queryInterface.bulkInsert('user', [{
       username: 'admin',
-      email: 'admin@admin.com',
-      password: '$2y$10$WGCyK6Abg3bWSiFKpU6e1u5ts52yBiKGsPeTUEUHFOs2dNYq7tGKu'
+      password: '$2y$10$WGCyK6Abg3bWSiFKpU6e1u5ts52yBiKGsPeTUEUHFOs2dNYq7tGKu',
+      name: 'Administrator',
+      status: 1,
+      user_type: 'admin',
+      created_by: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     }], {});
   },
 

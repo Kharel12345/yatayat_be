@@ -12,8 +12,11 @@ const login = asyncHandler(async (req, res, next) => {
         return CustomErrorHandler.inValidCaptchaResponse();
     }
 
-    const user = await authServices.findUser(username);
-    console.log('user', user);
+    const responeData = await authServices.findUser(username);
+ 
+    const user=responeData.dataValues;
+       console.log('user', user);
+    
     const validatePassword = await authServices.validatePassword(password, user);
 
     if (!user || !validatePassword) {
@@ -23,13 +26,13 @@ const login = asyncHandler(async (req, res, next) => {
     }
 
     //generate access token and refresh token 
-    const payload = { user_id: user.id, username, email: user.email };
+    const payload = { user_id: user.user_id, username, email: user.email };
 
     const access_token = jwtServices.generateToken(payload, JWT_SECRET, JWT_EXPIRY);
     const refresh_token = jwtServices.generateToken(payload, REFRESH_SECRET, REFRESH_EXPIRY);
 
     //save refresh token in the database
-    await authServices.createRefreshToken(user.id, refresh_token);
+    await authServices.createRefreshToken(user.user_id, refresh_token);
 
     res.cookie('refresh_token', refresh_token, {
         httpOnly: true,

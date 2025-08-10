@@ -1,33 +1,58 @@
 // // models/user.js
-const { DataTypes } = require('sequelize');
+const { DataTypes, Sequelize } = require('sequelize');
 const sequelize = require('../src/config/database');
 
 const User = sequelize.define('User', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-  },
-  username: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false
-  },
-  email: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  name: DataTypes.STRING,
-  address: DataTypes.STRING,
-  contact: DataTypes.STRING,
-  status: DataTypes.INTEGER,
-  user_type: DataTypes.STRING,
-  created_by: DataTypes.INTEGER
+    user_id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+        allowNull: false,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      address: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      contact: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      username: {
+        type: DataTypes.STRING,
+        unique: true,
+        allowNull: true,
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      status: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      user_type: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      created_by: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      // timestamps false, so no createdAt or updatedAt columns
+      createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.fn("NOW"),
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.fn("NOW"),
+      },
 }, {
   tableName: 'user',
   timestamps: false

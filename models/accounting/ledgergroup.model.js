@@ -1,5 +1,8 @@
 "use strict";
 
+const sequelize = require('../../src/config/database');
+
+const { DataTypes } = require("sequelize");
 const AccountingLedgerGroup = sequelize.define(
   "AccountingLedgerGroup",
   {
