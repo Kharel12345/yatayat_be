@@ -13,6 +13,7 @@ const {
   vechileCategoryRoutes,
   vechileSubCategoryRoutes,
   vehicleRoute,
+  BillingTitleRoutes,
 } = require("./routes/master");
 
 const allowedOrigins = process.env.CORS_ORIGINS?.split(",") || [];
@@ -48,7 +49,7 @@ app.use("/api/master", vechileCategoryRoutes);
 app.use("/api/master", vechileSubCategoryRoutes);
 app.use("/api/master", vehicleRoute);
 app.use("/api/master", branchRoute);
-
+app.use("/api/master",BillingTitleRoutes)
 app.use(errorHandler);
 
 app.use((req, res, next) => {

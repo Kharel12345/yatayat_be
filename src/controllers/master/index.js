@@ -3,11 +3,13 @@ const smsSettingInfoController = require("./sms_setting_info.controller");
 const vehicleController = require("./vehicle.controller");
 const categoryController = require("./category.controller");
 const subCategoryController = require("./sub_category.controller");
+const BillingTitleController= require('./billing_title.controller');
 
 module.exports = {
   economicYearControllers,
   smsSettingInfoController,
   vehicleController,
   categoryController,
-  subCategoryController
+  subCategoryController,
+  BillingTitleController
 };

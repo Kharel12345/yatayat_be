@@ -3,6 +3,7 @@ const smsSettingInfoService = require("./sms_setting_info.service");
 const vehicleService = require("./vehicle.service");
 const categoryService = require("./category.service");
 const subCategoryService = require("./sub_category.service");
+const BillingTitleService = require("./billing_title.service");
 
 module.exports = {
   economicYearServices,
@@ -10,4 +11,5 @@ module.exports = {
   vehicleService,
   categoryService,
   subCategoryService,
+  BillingTitleService
 };
