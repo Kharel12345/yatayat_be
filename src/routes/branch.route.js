@@ -5,9 +5,11 @@ const auth = require('../middlewares/auth')
 const { branchControllers } = require('../controllers/auth')
 const { setupEconomicYearValidation } = require('../middlewares/validation/master')
 
-router.post('/branchsetup', auth, setupEconomicYearValidation.branchSetupValidation, branchControllers.branchSetup)
+router.post('/branch', auth, setupEconomicYearValidation.branchSetupValidation, branchControllers.branchSetup);
 
-router.get('/getbranchlist', auth, branchControllers.getBranchList)
+router.put('/branch/:id', auth, setupEconomicYearValidation.branchSetupValidation, branchControllers.updateBranch)
+
+router.get('/branch', auth, branchControllers.getBranchList)
 
 
 module.exports = router

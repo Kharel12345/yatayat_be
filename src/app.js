@@ -5,7 +5,7 @@ const helmet = require("helmet");
 const cors = require("cors");
 const logger = require("./config/winstonLoggerConfig");
 const errorHandler = require("./utils/errorHandler");
-const { authRoutes } = require("./routes");
+const { authRoutes, branchRoute } = require("./routes");
 const { ledgerRoutes } = require("./routes/Accounting");
 const {
   economicYearRoute,
@@ -47,6 +47,7 @@ app.use("/api/master", smsSettingInfoRoute);
 app.use("/api/master", vechileCategoryRoutes);
 app.use("/api/master", vechileSubCategoryRoutes);
 app.use("/api/master", vehicleRoute);
+app.use("/api/master", branchRoute);
 
 app.use(errorHandler);
 
