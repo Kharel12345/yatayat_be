@@ -12,6 +12,7 @@ const {
   smsSettingInfoRoute,
   vechileCategoryRoutes,
   vechileSubCategoryRoutes,
+  vehicleRoute,
 } = require("./routes/master");
 
 const allowedOrigins = process.env.CORS_ORIGINS?.split(",") || [];
@@ -45,6 +46,7 @@ app.use("/api/master", economicYearRoute);
 app.use("/api/master", smsSettingInfoRoute);
 app.use("/api/master", vechileCategoryRoutes);
 app.use("/api/master", vechileSubCategoryRoutes);
+app.use("/api/master", vehicleRoute);
 
 app.use(errorHandler);
 

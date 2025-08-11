@@ -6,6 +6,8 @@ const {
 const AccountingLedgerGroup = require("../../../models/accounting/ledgergroup.model");
 const AccountingLedgerSubGroup = require("../../../models/accounting/ledgersubgroup.model");
 const AccountingLedgerMapping = require("../../../models/accounting/ledgermapping.model");
+const LedgerInfo = require("../../../models/accounting/ledger.model");
+const { Sequelize } = require("sequelize");
 
 const getledgerGrouplist = async () => {
   try {
@@ -100,7 +102,7 @@ const saveLedgerMapping = async (body) => {
 const getLedgerMappingPagination = async (limit, offset) => {
   try {
     let { data, total } =
-      await AccountingLedgerMapping.getLedgerMappingPagination(limit, offset);
+      await getLedgerMappingModelPagination(limit, offset);
     data = data.map((d) => {
       d = {
         ...d,
@@ -112,6 +114,32 @@ const getLedgerMappingPagination = async (limit, offset) => {
   } catch (error) {
     throw new Error(error);
   }
+};
+
+const getLedgerMappingModelPagination = async (limit, offset) => {
+  const { count, rows } = await AccountingLedgerMapping.findAndCountAll({
+    attributes: ["id", "label", "ledger_id"],
+    include: [
+      {
+        model: LedgerInfo,
+        as: "ledger",
+        attributes: [
+          [
+            Sequelize.fn("COALESCE", Sequelize.col("ledger.ledgername"), ""),
+            "ledgername",
+          ],
+        ],
+        required: false, 
+      },
+    ],
+    limit,
+    offset,
+  });
+
+  return {
+    data: rows,
+    total: count,
+  };
 };
 
 const getledgerGroup = async (name) => {

@@ -1,21 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const {
-  register,
-  renew,
-  getDue,
-} = require("../../controllers/master/vehicle.controller");
+
 const auth = require("../../middlewares/auth");
+const { vechileRegistrationValidation } = require("../../middlewares/validation/master");
+const { vehicleController } = require("../../controllers/master");
 // const { preauthorize } = require('../../utils/preAuthorize');
 
-router.post("/register", auth, 
-    // preauthorize("create_vehicle"),
-     register);
-router.post("/renew", auth,
-    //  preauthorize("renew_vehicle"), 
-     renew);
-router.get("/due", auth,
-    //  preauthorize("view_due_vehicle"), 
-     getDue);
+
+router.post("/creatememberregistartion", vechileRegistrationValidation.vechileRegistrationValidation, vehicleController.createVehicle);
+router.get("/getmemberregistartionpagination", vehicleController.getVehiclesPaginated);
+router.get("/getmemberregistartionbyid/:id", vehicleController.getVehicleById);
+router.put("/updatememberregistartion/:id",  vechileRegistrationValidation.vechileRegistrationValidation, vehicleController.updateVehicle);
+router.delete("/deletememberregistartion/:id", vehicleController.deleteVehicle);
 
 module.exports = router;

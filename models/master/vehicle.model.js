@@ -1,37 +1,20 @@
-const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../../src/config/database');
+const { DataTypes, Model } = require("sequelize");
+const sequelize = require("../../src/config/database");
 
-class Vehicle extends Model {}
-
-Vehicle.init({
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  owner_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-  registration_no: {
-    type: DataTypes.STRING(50),
-    allowNull: false,
-    unique: true,
-  },
-  vehicle_type: {
-    type: DataTypes.STRING(30),
-    allowNull: false,
-  },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
-}, {
-  sequelize,
-  modelName: 'Vehicle',
-  tableName: 'vehicle',
-  timestamps: false,
-  underscored: true,
+// models/vehicle.js
+const Vehicle = sequelize.define("Vehicle", {
+  vehicleNo: { type: DataTypes.STRING, allowNull: false },
+  ownerName: { type: DataTypes.STRING, allowNull: false },
+  address: { type: DataTypes.STRING, allowNull: false },
+  panNo: DataTypes.STRING,
+  membershipNo: DataTypes.STRING,
+  photo: DataTypes.STRING,
+  registrationDate: DataTypes.DATE,
 });
+Vehicle.associate = (models) => {
+  Vehicle.hasOne(models.Operator, { foreignKey: "vehicleId", as: "operator" });
+  Vehicle.hasOne(models.Helper, { foreignKey: "vehicleId", as: "helper" });
+  Vehicle.hasMany(models.Driver, { foreignKey: "vehicleId", as: "drivers" });
+};
 
-module.exports = Vehicle; 
+module.exports = Vehicle;

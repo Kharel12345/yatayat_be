@@ -3,6 +3,9 @@ const SmsSettingInfo = require("./sms_setting_info.model");
 const Vehicle = require("./vehicle.model");
 const VehicleRenewal = require("./vehicle_renewal.model");
 const VehicleTransaction = require("./vehicle_transaction.model");
+const Operator = require("./operator.model");
+const Helper = require("./helper.model");
+const Driver = require("./driver.model");
 
 module.exports = {
   FunctionalYear,
@@ -10,4 +13,7 @@ module.exports = {
   Vehicle,
   VehicleRenewal,
   VehicleTransaction,
+  Operator,
+  Helper,
+  Driver,
 };
