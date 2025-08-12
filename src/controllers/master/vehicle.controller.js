@@ -29,8 +29,7 @@ const getVehiclesPaginated = async (req, res, next) => {
 
 const getVehicleById = async (req, res, next) => {
   try {
-    console.log(req.params.id);
-    
+ 
     const vehicle = await vehicleService.getVehicleById(req.params.id);
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
     res.json(SUCCESS_API_FETCH(vehicle));
@@ -46,6 +45,19 @@ const updateVehicle = async (req, res, next) => {
   try {
     const updated = await vehicleService.updateVehicle(req.params.id, req.body);
     if (!updated) return res.status(404).json({ error: "Vehicle not found" });
+
+    // const vehicle = await Vehicle.findByPk(id);
+    // if (!vehicle) {
+    //   return res
+    //     .status(404)
+    //     .json({ success: false, message: "Vehicle not found" });
+    // }
+    // if (req.body.photo && vehicle.photo) {
+    //   const oldPath = path.join(__dirname, "../uploads", vehicle.photo);
+    //   if (fs.existsSync(oldPath)) {
+    //     fs.unlinkSync(oldPath); // remove old file
+    //   }
+    // }
     res.json({ message: "Vehicle updated successfully" });
   } catch (error) {
     logger.error(
