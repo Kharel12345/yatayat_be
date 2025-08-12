@@ -7,6 +7,7 @@ const Operator = require("./operator.model");
 const Helper = require("./helper.model");
 const Driver = require("./driver.model");
 const BillingTitleInfo=require('./billing_title.model');
+const BillingTitleMappingInfo=require('./billing_title_mappingInfo');
 
 module.exports = {
   FunctionalYear,
@@ -17,5 +18,6 @@ module.exports = {
   Operator,
   Helper,
   Driver,
-  BillingTitleInfo
+  BillingTitleInfo,
+  BillingTitleMappingInfo
 };
