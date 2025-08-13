@@ -1,7 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const auth = require('../middlewares/auth')
-// const { preauthorize } = require('../../utils/preAuthorizeModule')
+const auth = require('../middlewares/auth');
 const { branchControllers } = require('../controllers/auth')
 const { setupEconomicYearValidation } = require('../middlewares/validation/master')
 

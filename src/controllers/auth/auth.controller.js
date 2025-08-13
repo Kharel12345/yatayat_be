@@ -14,9 +14,7 @@ const login = asyncHandler(async (req, res, next) => {
 
     const responeData = await authServices.findUser(username);
  
-    const user=responeData.dataValues;
-       console.log('user', user);
-    
+    const user = responeData;
     const validatePassword = await authServices.validatePassword(password, user);
 
     if (!user || !validatePassword) {

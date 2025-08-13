@@ -41,7 +41,10 @@ const createUser = async (req, res, next) => {
       JSON.stringify(username)
     );
     if (usernameCount > 0) {
-      return next(CustomErrorHandler.alreadyExists("Username already exists"));
+      return res.status(208).json({
+        status: false,
+        message: "User name already exits!!!"
+      });
     }
 
     //hash the password
@@ -87,23 +90,23 @@ const getUserPagination = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const viewAll =
-      req.permission["user"] && req.permission["user"].includes("viewall_user");
+    // const viewAll =
+    //   req.permission["user"] && req.permission["user"].includes("viewall_user");
 
-    let { data, total } = await userServices.getUserPagination(
+    const { rows, count } = await userServices.getUserPagination(
       limit,
       offset,
       status,
       name,
-      viewAll,
+      // viewAll,
       req.user.user_id
     );
 
     return res.status(200).json({
       status: true,
       message: "Data found successfully!!!",
-      data: data,
-      total: total[0].total,
+      data: rows,
+      total: count,
     });
   } catch (error) {
     logger.error(
@@ -135,7 +138,6 @@ const getPermissionDetail = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
   try {
     const {
-      user_id,
       name,
       address,
       contact,
@@ -145,6 +147,8 @@ const updateUser = async (req, res, next) => {
       branch_id,
       branch,
     } = req.body;
+
+    const user_id = req.params.id;
 
     //check username
     let usernameCount = await isUniqueforUpdate(
@@ -156,7 +160,10 @@ const updateUser = async (req, res, next) => {
     );
 
     if (usernameCount > 0) {
-      return next(CustomErrorHandler.alreadyExists("Username already exists"));
+      return res.status(208).json({
+        status: false,
+        message: "User name already exits!!!"
+      });
     }
 
     let hashedPassword = null;
@@ -259,6 +266,25 @@ const getPermissionDetailByUserId = async (req, res, next) => {
   }
 };
 
+const deleteUser = async (req, res, next) => {
+  try {
+    const deleted = await userServices.deleteUser(req.params.id);
+    if (!deleted) return res.status(404).json({
+      status: false,
+      message: "User not found"
+    });
+    return res.status(204).json({
+      status: true,
+      message: "User deleted successfully!!!"
+    });
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+}
+
 module.exports = {
   getUserList,
   createUser,
@@ -268,4 +294,5 @@ module.exports = {
   updateUser,
   createUserPermission,
   getPermissionDetailByUserId,
+  deleteUser
 };

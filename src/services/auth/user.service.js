@@ -1,5 +1,14 @@
-const { User } = require("../../../models/user.model");
+const { sequelize } = require("../../../models");
+const BranchInfo = require("../../../models/branch.model");
+const User = require("../../../models/user.model");
+const UserBranchInfo = require("../../../models/userbranch.model");
 // const { modules } = require("../../utils/modulesDetails");
+
+User.hasMany(UserBranchInfo, { foreignKey: 'user_id' });
+UserBranchInfo.belongsTo(User, { foreignKey: 'user_id' });
+
+UserBranchInfo.belongsTo(BranchInfo, { foreignKey: 'branch_id' });
+BranchInfo.hasMany(UserBranchInfo, { foreignKey: 'branch_id' });
 
 const findByUsername = async (username) => {
   return await User.findOne({
@@ -63,29 +72,23 @@ const createUser = async (userDetails) => {
   }
 };
 
-const getUserPagination = async (
-  limit,
-  offset,
-  status,
-  name,
-  viewAll,
-  user_id
-) => {
+const getUserPagination = async (limit, offset, status, name, user_id) => {
   try {
-    const where = { status };
-    if (!viewAll) where.created_by = user_id;
+    const where = {};
+    if (status !== undefined) where.status = status;
+    if (user_id !== undefined) where.created_by = user_id;
     if (name) where.name = { [Op.like]: `${name}%` };
 
     const { rows, count } = await User.findAndCountAll({
       where,
       attributes: [
-        "user_id",
-        "name",
-        "address",
-        "contact",
-        "username",
-        "status",
-        "user_type",
+        'user_id',
+        'name',
+        'address',
+        'contact',
+        'username',
+        'status',
+        'user_type',
       ],
       include: [
         {
@@ -101,15 +104,16 @@ const getUserPagination = async (
           ],
         },
       ],
-      order: [["user_id", "DESC"]],
+      order: [['user_id', 'DESC']],
       limit,
       offset,
-      distinct: true,
+      distinct: true, // important for correct count when joins exist
     });
 
-    return { data: rows, total: count };
+    return { rows, count }
   } catch (error) {
-    throw new Error(error);
+    console.error('Error in getUserPagination:', error);
+    throw error;
   }
 };
 
@@ -209,6 +213,14 @@ const getUserType = async (user_id) => {
 //     throw new Error(error);
 //   }
 // };
+const deleteUser = async (user_id) => {
+  try {
+    const result = await User.destroy({ where: { user_id } });
+    return result;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
 
 module.exports = {
   getUserList,
@@ -221,4 +233,5 @@ module.exports = {
 //   createUserPermission,
 //   updateUserPermission,
   findByUsername,
+  deleteUser
 };

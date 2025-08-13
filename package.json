@@ -1,7 +1,7 @@
 {
-  "name": "psm_nepal_be",
+  "name": "yatayat_system",
   "version": "1.0.0",
-  "description": "PSM Nepal Website Backend",
+  "description": "yatayat_system be",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -16,7 +16,7 @@
     "deploy:preflight": "npm run db:backup && npm run db:migrate",
     "db:check-structure": "node fix-database-structure.js"
   },
-  "author": "Prasanna Kumar Baniya",
+  "author": "yatayat",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.6.5",

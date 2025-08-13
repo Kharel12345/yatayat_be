@@ -5,6 +5,7 @@ const vechileCategoryRoutes = require("./category.route");
 const vechileSubCategoryRoutes = require("./sub_category.route");
 const BillingTitleRoutes=require('./billing_title.route');
 const BillingTitleMappingInfoRoutes= require('./billing_title_mapping.route');
+const userRoutes = require("./user.route");
 
 module.exports = {
   smsSettingInfoRoute,
@@ -13,5 +14,6 @@ module.exports = {
   vechileCategoryRoutes,
   vechileSubCategoryRoutes,
   BillingTitleRoutes,
-  BillingTitleMappingInfoRoutes
+  BillingTitleMappingInfoRoutes,
+  userRoutes
 };

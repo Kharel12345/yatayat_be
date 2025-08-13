@@ -2,8 +2,8 @@ const Joi = require('joi')
 
 const createUserSchema = Joi.object({
     name: Joi.string().required(),
-    address: Joi.string().allow(null, ''),
-    contact: Joi.number().allow(null, ''),
+    address: Joi.string().required().allow(null, ''),
+    contact: Joi.number().required().allow(null, ''),
     username: Joi.string().required(),
     password: Joi.string()
         .min(8)
@@ -21,7 +21,7 @@ const createUserSchema = Joi.object({
 })
 
 const updateUserValidationSchema = Joi.object({
-    user_id: Joi.number().required(),
+    // user_id: Joi.number().required(),
     name: Joi.string().required(),
     address: Joi.string().allow(null, ''),
     contact: Joi.number().allow(null, ''),

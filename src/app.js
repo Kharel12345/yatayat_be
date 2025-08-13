@@ -15,6 +15,7 @@ const {
   vehicleRoute,
   BillingTitleRoutes,
   BillingTitleMappingInfoRoutes,
+  userRoutes
 } = require("./routes/master");
 
 const allowedOrigins = process.env.CORS_ORIGINS?.split(",") || [];
@@ -52,6 +53,7 @@ app.use("/api/master", vehicleRoute);
 app.use("/api/master", branchRoute);
 app.use("/api/master", BillingTitleRoutes);
 app.use("/api/master", BillingTitleMappingInfoRoutes);
+app.use("/api/master", userRoutes);
 app.use(errorHandler);
 
 app.use((req, res, next) => {
