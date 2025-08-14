@@ -128,6 +128,21 @@ class SubCategoryService {
       force: true
     });
   }
+  async getAllSubCategoriesList() {
+    return await SubCategory.findAll({
+      attributes: ['id', 'name'],
+    });
+  }
+
+  async getSubCategoryByCategory(categoryId) {
+    return await SubCategory.findAll({
+      attributes: ['id', 'name'],
+      where: {
+        categoryId
+      }
+    });
+  }
 }
+
 
 module.exports = new SubCategoryService();

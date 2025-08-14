@@ -93,10 +93,44 @@ const deleteSubCategory = async (req, res, next) => {
   }
 };
 
+const getAllSubCategoriesList = async (req, res, next) => {
+  try {
+    const subCategories = await subCategoryService.getAllSubCategoriesList();
+    res.status(200).json({
+      status: true,
+      message: "Sub-categories list",
+      data: subCategories
+    });
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+};
+
+const getSubCategoryByCategory = async (req, res, next) => {
+  try {
+    const subCategories = await subCategoryService.getSubCategoryByCategory(req.params.id);
+    res.status(200).json({
+      status: true,
+      message: "Sub-categories list",
+      data: subCategories
+    });
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+}
+
 module.exports = {
   createSubCategory,
   getAllSubCategory,
   updateSubCategory,
   deleteSubCategory,
   getByIdSubCategory,
+  getAllSubCategoriesList,
+  getSubCategoryByCategory
 };
