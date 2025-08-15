@@ -1,10 +1,19 @@
 // middlewares/upload.js
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+
+// Upload directory
+const uploadDir = path.join(__dirname, '..', 'uploads');
+
+// Ensure the folder exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // folder where images will be saved
+    cb(null, uploadDir); // folder where images will be saved
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -19,7 +28,7 @@ const upload = multer({
     const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = fileTypes.test(file.mimetype);
     if (extname && mimetype) {
-      return cb(null, true);
+      cb(null, true);
     } else {
       cb(new Error('Only images are allowed!'));
     }
