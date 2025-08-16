@@ -4,7 +4,33 @@ const { vehicleService } = require("../../services/master");
 
 const createVehicle = async (req, res, next) => {
   try {
-    const vehicle = await vehicleService.createVehicle(req.body);
+      const vehicleData = {
+      ...req.body,
+      createdBy: req.user.user_id
+    };
+
+    // If drivers, helpers, operator exist, add createdBy to each
+    if (vehicleData.drivers?.length) {
+      vehicleData.drivers = vehicleData.drivers.map((d) => ({
+        ...d,
+        createdBy: req.user.user_id
+      }));
+    }
+
+    if (vehicleData.operator) {
+      vehicleData.operator = {
+        ...vehicleData.operator,
+        createdBy: req.user.user_id
+      };
+    }
+
+    if (vehicleData.helper) {
+      vehicleData.helper = {
+        ...vehicleData.helper,
+        createdBy: req.user.user_id
+      };
+    }
+    const vehicle = await vehicleService.createVehicle(vehicleData);
     res.status(201).json({ message: "Vehicle created", vehicle });
   } catch (error) {
     logger.error(

@@ -11,12 +11,16 @@ const upload = require("../../middlewares/upload");
 
 router.post(
   "/creatememberregistartion",
-  upload.single("photo"),
-  upload.single("licensePaper"),
-  upload.single("insurancePaper"),
-  upload.single("operatorPhoto"),
-  upload.single("helperPhoto"),
-  upload.array("driverPhotos"),
+  auth,
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "licensePaper", maxCount: 1 },
+    { name: "insurancePaper", maxCount: 1 },
+    { name: "operatorPhoto", maxCount: 1 },
+    { name: "helperPhoto", maxCount: 1 },
+    { name: "driverPhoto[0]", maxCount: 5 },
+    { name: "driverPhoto[1]", maxCount: 5 },
+  ]),
   vechileRegistrationValidation.vechileRegistrationValidation,
   vehicleController.createVehicle
 );

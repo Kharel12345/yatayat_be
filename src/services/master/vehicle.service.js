@@ -6,21 +6,43 @@ const createVehicle = async (data) => {
 
   const vehicle = await Vehicle.create(vehicleData);
 
-  // Save operator only if it has at least one non-empty field
-  if (operator && Object.values(operator).some((v) => v && v.trim() !== "")) {
+  // Save operator only if it has at least one non-empty string field
+  if (
+    operator &&
+    Object.values(operator).some(
+      (v) => v != null && typeof v === "string" && v.trim() !== ""
+    )
+  ) {
     await Operator.create({ ...operator, vehicleId: vehicle.id });
   }
 
-  // Save helper only if it has at least one non-empty field
-  if (helper && Object.values(helper).some((v) => v && v.trim() !== "")) {
+  // Save helper only if it has at least one non-empty string field
+  if (
+    helper &&
+    Object.values(helper).some(
+      (v) => v != null && typeof v === "string" && v.trim() !== ""
+    )
+  ) {
     await Helper.create({ ...helper, vehicleId: vehicle.id });
   }
 
+
+
   // Save drivers only if there is at least one driver with real data
   if (Array.isArray(drivers)) {
-    const driverData = drivers.filter((d) =>
-      Object.values(d).some((v) => v && v.trim() !== "")
-    ).map((d) => ({ ...d, vehicleId: vehicle.id }));
+    const driverData = drivers
+      .filter((d) =>
+        Object.values(d).some(
+          (v) => v != null && typeof v === "string" && v.trim() !== ""
+        )
+      )
+      .map((d, index) => ({
+        ...d,
+        vehicleId: vehicle.id,
+        createdBy: data.createdBy,
+        status: 1,
+        photo: d.driverPhoto?.[index]?.filename || null,
+      }));
 
     if (driverData.length > 0) {
       await Driver.bulkCreate(driverData);
@@ -35,7 +57,12 @@ const getVehiclesPaginated = async (page = 1, limit = 10) => {
 
   const data = await Vehicle.findAndCountAll({
     include: [
-      { model: Operator, as: "operator", where: { status: 1 }, required: false },
+      {
+        model: Operator,
+        as: "operator",
+        where: { status: 1 },
+        required: false,
+      },
       { model: Helper, as: "helper", where: { status: 1 }, required: false },
       { model: Driver, as: "drivers", where: { status: 1 }, required: false },
     ],
@@ -55,14 +82,17 @@ const getVehiclesPaginated = async (page = 1, limit = 10) => {
 const getVehicleById = async (id) => {
   return await Vehicle.findByPk(id, {
     include: [
-      { model: Operator, as: "operator", where: { status: 1 }, required: false },
+      {
+        model: Operator,
+        as: "operator",
+        where: { status: 1 },
+        required: false,
+      },
       { model: Helper, as: "helper", where: { status: 1 }, required: false },
       { model: Driver, as: "drivers", where: { status: 1 }, required: false },
     ],
   });
 };
-
-
 
 const updateVehicle = async (id, data) => {
   const { drivers, operator, helper, ...vehicleData } = data;
@@ -75,7 +105,9 @@ const updateVehicle = async (id, data) => {
 
   // --- Operator ---
   if (operator && Object.values(operator).some((v) => v && v.trim() !== "")) {
-    const existingOperator = await Operator.findOne({ where: { vehicleId: id } });
+    const existingOperator = await Operator.findOne({
+      where: { vehicleId: id },
+    });
     if (existingOperator) {
       await existingOperator.update({ ...operator, status: 1 });
     } else {
@@ -99,9 +131,9 @@ const updateVehicle = async (id, data) => {
 
   // --- Drivers ---
   if (Array.isArray(drivers)) {
-    const validDrivers = drivers.filter((d) =>
-      Object.values(d).some((v) => v && v.trim() !== "")
-    ).map((d) => ({ ...d, vehicleId: id, status: 1 }));
+    const validDrivers = drivers
+      .filter((d) => Object.values(d).some((v) => v && v.trim() !== ""))
+      .map((d) => ({ ...d, vehicleId: id, status: 1 }));
 
     if (validDrivers.length > 0) {
       // mark all old drivers inactive
