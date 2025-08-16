@@ -4,32 +4,53 @@ const { vehicleService } = require("../../services/master");
 
 const createVehicle = async (req, res, next) => {
   try {
-      const vehicleData = {
+    // Basic vehicle data
+    const vehicleData = {
       ...req.body,
-      createdBy: req.user.user_id
+      createdBy: req.user.user_id,
+      photo: req.files?.photo?.[0]?.filename || null, // vehicle photo
+      licensePaper: req.files?.licensePaper?.[0]?.filename || null,
+      insurancePaper: req.files?.insurancePaper?.[0]?.filename || null,
     };
 
-    // If drivers, helpers, operator exist, add createdBy to each
-    if (vehicleData.drivers?.length) {
-      vehicleData.drivers = vehicleData.drivers.map((d) => ({
-        ...d,
-        createdBy: req.user.user_id
-      }));
-    }
-
-    if (vehicleData.operator) {
+    // Operator data (optional)
+    if (req.body.operator) {
       vehicleData.operator = {
-        ...vehicleData.operator,
-        createdBy: req.user.user_id
+        ...req.body.operator,
+        createdBy: req.user.user_id,
+        photo: req.files?.operatorPhoto?.[0]?.filename || null,
       };
     }
 
-    if (vehicleData.helper) {
+    // Helper data (optional)
+    if (req.body.helper) {
       vehicleData.helper = {
-        ...vehicleData.helper,
-        createdBy: req.user.user_id
+        ...req.body.helper,
+        createdBy: req.user.user_id,
+        photo: req.files?.helperPhoto?.[0]?.filename || null,
       };
     }
+
+    // console.log(req.files);
+    const driverPhotoKeys = Object.keys(req.files || {}).filter((key) =>
+      key.startsWith("driverPhoto")
+    );
+
+
+    // Map photos to drivers
+    if (req.body.drivers?.length) {
+      vehicleData.drivers = req.body.drivers.map((d, index) => {
+        const photoKey = driverPhotoKeys.find((key) =>
+          key.endsWith(`[${index}]`)
+        );
+        return {
+          ...d,
+          createdBy: req.user.user_id,
+          photo: req.files?.[photoKey]?.[0]?.filename || null, // assign photo by its fieldname
+        };
+      });
+    }
+
     const vehicle = await vehicleService.createVehicle(vehicleData);
     res.status(201).json({ message: "Vehicle created", vehicle });
   } catch (error) {
@@ -55,7 +76,6 @@ const getVehiclesPaginated = async (req, res, next) => {
 
 const getVehicleById = async (req, res, next) => {
   try {
- 
     const vehicle = await vehicleService.getVehicleById(req.params.id);
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
     res.json(SUCCESS_API_FETCH(vehicle));

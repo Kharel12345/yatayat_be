@@ -29,7 +29,7 @@ const createVehicle = async (data) => {
 
 
   // Save drivers only if there is at least one driver with real data
-  if (Array.isArray(drivers)) {
+  if (Array.isArray(drivers)) {  
     const driverData = drivers
       .filter((d) =>
         Object.values(d).some(
@@ -39,9 +39,9 @@ const createVehicle = async (data) => {
       .map((d, index) => ({
         ...d,
         vehicleId: vehicle.id,
-        createdBy: data.createdBy,
         status: 1,
-        photo: d.driverPhoto?.[index]?.filename || null,
+        createdBy: d.createdBy,
+        photo: d.photo|| null,
       }));
 
     if (driverData.length > 0) {
@@ -68,7 +68,7 @@ const getVehiclesPaginated = async (page = 1, limit = 10) => {
     ],
     limit: parseInt(limit),
     offset: parseInt(offset),
-    distinct: true, // ensures count is correct when using include
+    distinct: true, 
   });
 
   return {

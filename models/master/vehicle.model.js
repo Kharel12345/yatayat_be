@@ -1,4 +1,3 @@
-// models/vehicle.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../src/config/database");
 
@@ -11,7 +10,9 @@ const Vehicle = sequelize.define(
     panNo: { type: DataTypes.STRING, allowNull: true },
     membershipNo: { type: DataTypes.STRING, allowNull: true },
     photo: { type: DataTypes.STRING, allowNull: true },
-    registrationDate: { type: DataTypes.DATE, allowNull: true },
+    licensePaper: { type: DataTypes.STRING, allowNull: true },
+    insurancePaper: { type: DataTypes.STRING, allowNull: true },
+    registrationDate: { type: DataTypes.DATE, allowNull: false },
     categoryId: { type: DataTypes.INTEGER, allowNull: true },
     subCategoryId: { type: DataTypes.INTEGER, allowNull: true },
     branchId: { type: DataTypes.INTEGER, allowNull: true },
@@ -22,10 +23,10 @@ const Vehicle = sequelize.define(
   },
   {
     tableName: "Vehicles",
+    timestamps: true,
   }
 );
 
-// Associations
 Vehicle.associate = (models) => {
   Vehicle.hasOne(models.Operator, { foreignKey: "vehicleId", as: "operator" });
   Vehicle.hasOne(models.Helper, { foreignKey: "vehicleId", as: "helper" });

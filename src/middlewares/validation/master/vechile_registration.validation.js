@@ -34,19 +34,20 @@ const vehicleSchema = Joi.object({
   panNo: Joi.string().allow(""),
   membershipNo: Joi.string().allow(""),
   photo: Joi.string().allow(""),
+  licensePaper: Joi.string().allow(""),
+  insurancePaper: Joi.string().allow(""),
   registrationDate: Joi.date().required(),
   categoryId: Joi.number().required(),
   subCategoryId: Joi.number().required(),
   functionalYear: Joi.string().required(),
   branchId: Joi.number().required(),
-  organization: Joi.string().required().allow("",null),
+  organization: Joi.string().required().allow("", null),
   drivers: Joi.array().items(driverSchema).allow(null).optional(),
   operator: operatorSchema,
   helper: helperSchema,
 });
 
 const vechileRegistrationValidation = (req, res, next) => {
-
   try {
     // Parse JSON fields if they come as strings (from form-data)
     ["drivers", "operator", "helper"].forEach((field) => {
