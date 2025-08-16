@@ -41,16 +41,31 @@ const vehicleSchema = Joi.object({
 });
 
 const vechileRegistrationValidation = (req, res, next) => {
-  const { error } = vehicleSchema.validate(req.body);
-  if (error) {
-    if (req.file && req.file.path) {
+  try {
+    // Parse JSON fields if they come as strings (from form-data)
+    ["drivers", "operator", "helper"].forEach((field) => {
+      if (req.body[field] && typeof req.body[field] === "string") {
+        try {
+          req.body[field] = JSON.parse(req.body[field]);
+        } catch (err) {
+          req.body[field] = req.body[field];
+        }
+      }
+    });
 
-      fs.unlinkSync(req.file.path);
+    const { error } = vehicleSchema.validate(req.body, { abortEarly: false });
+
+    if (error) {
+      if (req.file && req.file.path) {
+        fs.unlinkSync(req.file.path); // remove uploaded file if validation fails
+      }
+      return next(error);
     }
-    return next(error);
-  }
 
-  next();
+    next();
+  } catch (err) {
+    next(err);
+  }
 };
 
 module.exports = {

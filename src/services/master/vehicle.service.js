@@ -6,11 +6,25 @@ const createVehicle = async (data) => {
 
   const vehicle = await Vehicle.create(vehicleData);
 
-  if (operator) await Operator.create({ ...operator, vehicleId: vehicle.id });
-  if (helper) await Helper.create({ ...helper, vehicleId: vehicle.id });
-  if (drivers?.length) {
-    const driverData = drivers.map((d) => ({ ...d, vehicleId: vehicle.id }));
-    await Driver.bulkCreate(driverData);
+  // Save operator only if it has at least one non-empty field
+  if (operator && Object.values(operator).some((v) => v && v.trim() !== "")) {
+    await Operator.create({ ...operator, vehicleId: vehicle.id });
+  }
+
+  // Save helper only if it has at least one non-empty field
+  if (helper && Object.values(helper).some((v) => v && v.trim() !== "")) {
+    await Helper.create({ ...helper, vehicleId: vehicle.id });
+  }
+
+  // Save drivers only if there is at least one driver with real data
+  if (Array.isArray(drivers)) {
+    const driverData = drivers.filter((d) =>
+      Object.values(d).some((v) => v && v.trim() !== "")
+    ).map((d) => ({ ...d, vehicleId: vehicle.id }));
+
+    if (driverData.length > 0) {
+      await Driver.bulkCreate(driverData);
+    }
   }
 
   return vehicle;
@@ -21,12 +35,13 @@ const getVehiclesPaginated = async (page = 1, limit = 10) => {
 
   const data = await Vehicle.findAndCountAll({
     include: [
-      { model: Operator, as: "operator" },
-      { model: Helper, as: "helper" },
-      { model: Driver, as: "drivers" },
+      { model: Operator, as: "operator", where: { status: 1 }, required: false },
+      { model: Helper, as: "helper", where: { status: 1 }, required: false },
+      { model: Driver, as: "drivers", where: { status: 1 }, required: false },
     ],
     limit: parseInt(limit),
     offset: parseInt(offset),
+    distinct: true, // ensures count is correct when using include
   });
 
   return {
@@ -39,22 +54,65 @@ const getVehiclesPaginated = async (page = 1, limit = 10) => {
 
 const getVehicleById = async (id) => {
   return await Vehicle.findByPk(id, {
-    include: ["operator", "helper", "drivers"],
+    include: [
+      { model: Operator, as: "operator", where: { status: 1 }, required: false },
+      { model: Helper, as: "helper", where: { status: 1 }, required: false },
+      { model: Driver, as: "drivers", where: { status: 1 }, required: false },
+    ],
   });
 };
 
+
+
 const updateVehicle = async (id, data) => {
   const { drivers, operator, helper, ...vehicleData } = data;
+
   const vehicle = await Vehicle.findByPk(id);
   if (!vehicle) return null;
 
+  // update main vehicle fields
   await vehicle.update(vehicleData);
 
-  if (operator) await Operator.update(operator, { where: { vehicleId: id } });
-  if (helper) await Helper.update(helper, { where: { vehicleId: id } });
-  if (drivers) {
-    await Driver.destroy({ where: { vehicleId: id } });
-    await Driver.bulkCreate(drivers.map((d) => ({ ...d, vehicleId: id })));
+  // --- Operator ---
+  if (operator && Object.values(operator).some((v) => v && v.trim() !== "")) {
+    const existingOperator = await Operator.findOne({ where: { vehicleId: id } });
+    if (existingOperator) {
+      await existingOperator.update({ ...operator, status: 1 });
+    } else {
+      await Operator.create({ ...operator, vehicleId: id, status: 1 });
+    }
+  } else {
+    await Operator.update({ status: 0 }, { where: { vehicleId: id } });
+  }
+
+  // --- Helper ---
+  if (helper && Object.values(helper).some((v) => v && v.trim() !== "")) {
+    const existingHelper = await Helper.findOne({ where: { vehicleId: id } });
+    if (existingHelper) {
+      await existingHelper.update({ ...helper, status: 1 });
+    } else {
+      await Helper.create({ ...helper, vehicleId: id, status: 1 });
+    }
+  } else {
+    await Helper.update({ status: 0 }, { where: { vehicleId: id } });
+  }
+
+  // --- Drivers ---
+  if (Array.isArray(drivers)) {
+    const validDrivers = drivers.filter((d) =>
+      Object.values(d).some((v) => v && v.trim() !== "")
+    ).map((d) => ({ ...d, vehicleId: id, status: 1 }));
+
+    if (validDrivers.length > 0) {
+      // mark all old drivers inactive
+      await Driver.update({ status: 0 }, { where: { vehicleId: id } });
+
+      // insert new active drivers
+      await Driver.bulkCreate(validDrivers);
+    } else {
+      // no valid drivers in request → mark all old drivers inactive
+      await Driver.update({ status: 0 }, { where: { vehicleId: id } });
+    }
   }
 
   return vehicle;
