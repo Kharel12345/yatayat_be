@@ -12,6 +12,11 @@ const upload = require("../../middlewares/upload");
 router.post(
   "/creatememberregistartion",
   upload.single("photo"),
+  upload.single("licensePaper"),
+  upload.single("insurancePaper"),
+  upload.single("operatorPhoto"),
+  upload.single("helperPhoto"),
+  upload.array("driverPhotos"),
   vechileRegistrationValidation.vechileRegistrationValidation,
   vehicleController.createVehicle
 );
