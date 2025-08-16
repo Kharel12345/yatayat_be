@@ -9,6 +9,7 @@ const createVehicle = async (req, res, next) => {
       ...req.body,
       createdBy: req.user.user_id,
       photo: req.files?.photo?.[0]?.filename || null, // vehicle photo
+      billBookPhoto: req.files?.billBookPhoto?.[0]?.filename || null, // vehicle photo
       licensePaper: req.files?.licensePaper?.[0]?.filename || null,
       insurancePaper: req.files?.insurancePaper?.[0]?.filename || null,
     };

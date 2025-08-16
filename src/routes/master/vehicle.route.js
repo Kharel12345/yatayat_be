@@ -14,6 +14,7 @@ router.post(
   auth,
   upload.fields([
     { name: "photo", maxCount: 1 },
+    { name: "billBookPhoto", maxCount: 1 },
     { name: "licensePaper", maxCount: 1 },
     { name: "insurancePaper", maxCount: 1 },
     { name: "operatorPhoto", maxCount: 1 },
