@@ -1,5 +1,57 @@
 // services/vehicle.service.js
 const { Vehicle, Operator, Helper, Driver } = require("../../../models/master");
+const LedgerInfo = require("../../../models/accounting/ledger.model");
+const Nepali_Calendar = require("../../helpers/nepaliCalendar");
+const { Op } = require("sequelize");
+
+const createOrUpdateLedgerForVehicle = async (vehicle, meta) => {
+  const {
+    functional_year_id,
+    branch_id,
+    master_ledger_group_id,
+    ledger_sub_group_id,
+    address,
+    contact,
+    createdBy,
+  } = meta || {};
+
+  if (!functional_year_id || !branch_id || !master_ledger_group_id) {
+    return null; // insufficient meta to create ledger
+  }
+
+  const ledgername = vehicle.vehicleNo || vehicle.registration_no;
+  const opening_balance_date = new Date();
+
+  const existing = await LedgerInfo.findOne({ where: { ledgername } });
+  if (existing) {
+    await existing.update({
+      ledger_type: "Transportation",
+      master_ledger_group_id,
+      ledger_sub_group_id: ledger_sub_group_id || null,
+      address: address || null,
+      contact: contact || null,
+      functional_year_id,
+      branch_id,
+      status: 1,
+    });
+    return existing;
+  }
+
+  return await LedgerInfo.create({
+    ledgername,
+    ledger_type: "Transportation",
+    master_ledger_group_id,
+    ledger_sub_group_id: ledger_sub_group_id || null,
+    address: address || null,
+    contact: contact || null,
+    opening_balance: 0,
+    opening_balance_date,
+    functional_year_id,
+    branch_id,
+    status: 1,
+    created_by: createdBy || null,
+  });
+};
 
 const createVehicle = async (data) => {
   const { drivers, operator, helper, ...vehicleData } = data;
@@ -26,10 +78,8 @@ const createVehicle = async (data) => {
     await Helper.create({ ...helper, vehicleId: vehicle.id });
   }
 
-
-
   // Save drivers only if there is at least one driver with real data
-  if (Array.isArray(drivers)) {  
+  if (Array.isArray(drivers)) {
     const driverData = drivers
       .filter((d) =>
         Object.values(d).some(
@@ -41,7 +91,7 @@ const createVehicle = async (data) => {
         vehicleId: vehicle.id,
         status: 1,
         createdBy: d.createdBy,
-        photo: d.photo|| null,
+        photo: d.photo || null,
       }));
 
     if (driverData.length > 0) {
@@ -49,13 +99,57 @@ const createVehicle = async (data) => {
     }
   }
 
+  // Create ledger entry (if sufficient meta provided in payload)
+  await createOrUpdateLedgerForVehicle(vehicle, vehicleData);
+
   return vehicle;
 };
 
-const getVehiclesPaginated = async (page = 1, limit = 10) => {
+const getVehiclesPaginated = async (page = 1, limit = 10, filters = {}) => {
   const offset = (page - 1) * limit;
+  const where = { status: 1 };
+
+  // Organization filter (partial match)
+  if (filters.organization) {
+    where.organization = { [Op.like]: `%${filters.organization}%` };
+  }
+
+  // Vehicle number filter (supports both vehicleNo and registration_no)
+  if (filters.vehicle_no) {
+    const vehicleLike = { [Op.like]: `%${filters.vehicle_no}%` };
+    where[Op.or] = [
+      { vehicleNo: vehicleLike },
+      { registration_no: vehicleLike },
+    ];
+  }
+
+  // Date filters (BS -> AD). Using registrationDate if available; otherwise created_at
+  const calendar = new Nepali_Calendar();
+  const hasRegistrationDate = !!Vehicle.rawAttributes?.registrationDate;
+  const dateField = hasRegistrationDate ? 'registrationDate' : 'created_at';
+
+  if (filters.date_bs) {
+    const ad = calendar.BSToADConvert(filters.date_bs);
+    const start = new Date(ad);
+    const end = new Date(ad);
+    end.setHours(23, 59, 59, 999);
+    where[dateField] = { [Op.between]: [start, end] };
+  } else if (filters.from_date_bs || filters.to_date_bs) {
+    const startAd = filters.from_date_bs ? new Date(calendar.BSToADConvert(filters.from_date_bs)) : null;
+    const endAd = filters.to_date_bs ? new Date(calendar.BSToADConvert(filters.to_date_bs)) : null;
+    if (startAd && endAd) {
+      endAd.setHours(23, 59, 59, 999);
+      where[dateField] = { [Op.between]: [startAd, endAd] };
+    } else if (startAd) {
+      where[dateField] = { [Op.gte]: startAd };
+    } else if (endAd) {
+      endAd.setHours(23, 59, 59, 999);
+      where[dateField] = { [Op.lte]: endAd };
+    }
+  }
 
   const data = await Vehicle.findAndCountAll({
+    where,
     include: [
       {
         model: Operator,
@@ -68,7 +162,8 @@ const getVehiclesPaginated = async (page = 1, limit = 10) => {
     ],
     limit: parseInt(limit),
     offset: parseInt(offset),
-    distinct: true, 
+    distinct: true,
+    order: [[dateField, 'DESC']],
   });
 
   return {
@@ -80,7 +175,8 @@ const getVehiclesPaginated = async (page = 1, limit = 10) => {
 };
 
 const getVehicleById = async (id) => {
-  return await Vehicle.findByPk(id, {
+  return await Vehicle.findOne({
+    where: { id, status: 1 },
     include: [
       {
         model: Operator,
@@ -97,7 +193,7 @@ const getVehicleById = async (id) => {
 const updateVehicle = async (id, data) => {
   const { drivers, operator, helper, ...vehicleData } = data;
 
-  const vehicle = await Vehicle.findByPk(id);
+  const vehicle = await Vehicle.findOne({ where: { id, status: 1 } });
   if (!vehicle) return null;
 
   // update main vehicle fields
@@ -147,11 +243,16 @@ const updateVehicle = async (id, data) => {
     }
   }
 
+  // Upsert ledger entry (if sufficient meta provided in payload)
+  await createOrUpdateLedgerForVehicle(vehicle, vehicleData);
+
   return vehicle;
 };
 
 const deleteVehicle = async (id) => {
-  return await Vehicle.destroy({ where: { id } });
+  // Soft delete: set status to 0
+  await Vehicle.update({ status: 0 }, { where: { id } });
+  return true;
 };
 
 module.exports = {

@@ -39,6 +39,8 @@ const getAllCategories = async (page, limit, status) => {
 
   if (status !== undefined) {
     where = { status: status == 'active' ? true : false };
+  } else {
+    where = { status: 1 };
   }
 
   const { count, rows } = await Category.findAndCountAll({
@@ -59,20 +61,20 @@ const getAllCategories = async (page, limit, status) => {
 
 const getCategoryById = async (id) => {
   return await Category.findOne({
-    where: { id },
+    where: { id, status: 1 },
   });
 };
 
 
-const deleteCategory = (id) => {
-  return Category.destroy({
-    where: { id },
-  });
+const deleteCategory = async (id) => {
+  await Category.update({ status: 0 }, { where: { id } });
+  return true;
 };
 
 const getAllCategoriesList = async () => {
   return await Category.findAll({
     attributes: ['id', 'name'],
+    where: { status: 1 },
   });
 };
 

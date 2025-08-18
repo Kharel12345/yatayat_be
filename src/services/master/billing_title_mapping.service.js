@@ -7,7 +7,7 @@ const createBillingMapping = (data) => {
 const findAllBillingMapping = (filters = {}) => {
   const where = {};
   if (filters.branch_id) where.branch_id = filters.branch_id;
-  if (filters.status !== undefined) where.status = filters.status;
+  if (filters.status !== undefined) where.status = filters.status; else where.status = 1;
 
   return BillingTitleMappingInfo.findAll({
     where,
@@ -21,7 +21,8 @@ const findAllBillingMapping = (filters = {}) => {
 };
 
 const findOneBillingMapping = (id) => {
-  return BillingTitleMappingInfo.findByPk(id, {
+  return BillingTitleMappingInfo.findOne({
+    where: { id, status: 1 },
     include: [
       { association: "billing_title" },
       { association: "label" },
@@ -32,17 +33,18 @@ const findOneBillingMapping = (id) => {
 };
 
 const updateBillingMapping = async (id, data) => {
-  const mapping = await BillingTitleMappingInfo.findByPk(id);
+  const mapping = await BillingTitleMappingInfo.findOne({ where: { id, status: 1 } });
   if (!mapping) return null;
 
   return mapping.update(data);
 };
 
 const deleteBillingMapping = async (id) => {
-  const mapping = await BillingTitleMappingInfo.findByPk(id);
+  const mapping = await BillingTitleMappingInfo.findOne({ where: { id } });
   if (!mapping) return null;
 
-  return mapping.destroy();
+  await mapping.update({ status: 0 });
+  return true;
 };
 
 module.exports = {

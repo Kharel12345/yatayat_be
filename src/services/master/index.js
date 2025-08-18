@@ -5,11 +5,13 @@ const categoryService = require("./category.service");
 const subCategoryService = require("./sub_category.service");
 const BillingTitleService = require("./billing_title.service");
 const billingTitleMappingService= require('./billing_title_mapping.service');
+const vehicleBillingService = require("./vehicle_billing.service");
 
 module.exports = {
   economicYearServices,
   smsSettingInfoService,
   vehicleService,
+  vehicleBillingService,
   categoryService,
   subCategoryService,
   BillingTitleService,

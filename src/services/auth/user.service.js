@@ -75,7 +75,7 @@ const createUser = async (userDetails) => {
 const getUserPagination = async (limit, offset, status, name, user_id) => {
   try {
     const where = {};
-    if (status !== undefined) where.status = status;
+    if (status !== undefined) where.status = status; else where.status = 1;
     if (user_id !== undefined) where.created_by = user_id;
     if (name) where.name = { [Op.like]: `${name}%` };
 
@@ -215,8 +215,9 @@ const getUserType = async (user_id) => {
 // };
 const deleteUser = async (user_id) => {
   try {
-    const result = await User.destroy({ where: { user_id } });
-    return result;
+    await User.update({ status: 0 }, { where: { user_id } });
+    await UserBranchInfo.update({ status: 0 }, { where: { user_id } });
+    return true;
   } catch (error) {
     throw new Error(error);
   }

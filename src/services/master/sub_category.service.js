@@ -43,6 +43,8 @@ class SubCategoryService {
         whereClauses.push('sc.status = :status');
         replacements.status = Number(status);
       }
+    } else {
+      whereClauses.push('sc.status = 1');
     }
 
     const whereSQL = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : '';
@@ -89,6 +91,7 @@ class SubCategoryService {
       where: {
         id: subCategoryId,
         categoryId,
+        status: 1,
       },
     });
   }
@@ -113,6 +116,7 @@ class SubCategoryService {
       where: {
         id: subCategoryId,
         categoryId,
+        status: 1,
       },
     });
 
@@ -121,16 +125,13 @@ class SubCategoryService {
   }
 
   async deleteSubCategory(id) {
-    return SubCategory.destroy({
-      where: {
-        id
-      },
-      force: true
-    });
+    await SubCategory.update({ status: 0 }, { where: { id } });
+    return true;
   }
   async getAllSubCategoriesList() {
     return await SubCategory.findAll({
       attributes: ['id', 'name'],
+      where: { status: 1 },
     });
   }
 
@@ -138,7 +139,8 @@ class SubCategoryService {
     return await SubCategory.findAll({
       attributes: ['id', 'name'],
       where: {
-        categoryId
+        categoryId,
+        status: 1,
       }
     });
   }
