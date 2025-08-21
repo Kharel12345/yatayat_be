@@ -2,6 +2,7 @@
 const { Op } = require("sequelize");
 const { BillingTitleInfo } = require("../../../models/master");
 const BranchInfo = require("../../../models/branch.model");
+const LabelInfo = require("../../../models/master/label_info.model");
 
 const checkBillingTitleExists = async ({ billing_title_code }) => {
   return await BillingTitleInfo.findOne({
@@ -48,11 +49,30 @@ const softDeleteBillingTitle = async (id) => {
   );
 };
 
+const getAllBillingTitleList = async () => {
+  return await BillingTitleInfo.findAll({
+    attributes: ["billing_title_id", "billing_title"], // only select these fields
+    where: { status: 1 }, // optional: only active
+    order: [["billing_title", "DESC"]], // optional: sort alphabetically
+  });
+};
+
+const getAllLabelList = async () => {
+  return await LabelInfo.findAll({
+    attributes: [["id", "label_id"], "label_name"], // ✅ fixed
+    where: { status: 1 },
+    order: [["id", "DESC"]], // use original column name for ordering
+  });
+};
+
+
 module.exports = {
   createBillingTitle,
   getBillingTitles,
   getBillingTitleById,
   updateBillingTitle,
   softDeleteBillingTitle,
-  checkBillingTitleExists
+  checkBillingTitleExists,
+  getAllBillingTitleList,
+  getAllLabelList
 };

@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../src/config/database'); // adjust path accordingly
+const sequelize = require('../../config/database');
 
 const LabelInfo = sequelize.define('LabelInfo', {
   id: {

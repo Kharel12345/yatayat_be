@@ -30,4 +30,16 @@ router.delete(
   BillingTitleController.deleteBillingTitle
 );
 
+router.get(
+  '/get-billings-title-list',
+  BillingTitleController.getAllBillingTitleList
+);
+
+
+router.get(
+  '/get-label-list',
+  BillingTitleController.getAllLabelList
+)
+
+
 module.exports = router;

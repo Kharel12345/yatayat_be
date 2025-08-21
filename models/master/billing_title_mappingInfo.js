@@ -1,5 +1,9 @@
 const { DataTypes, Model } = require("sequelize");
 const sequelize = require("../../src/config/database");
+const BranchInfo = require("../branch.model");
+const BillingTitleInfo = require("./billing_title.model");
+const LabelInfo = require("./label_info.model");
+const User = require("../user.model");
  
 const BillingTitleMappingInfo = sequelize.define(
   "BillingTitleMappingInfo",
@@ -62,21 +66,33 @@ const BillingTitleMappingInfo = sequelize.define(
   }
 );
 
-BillingTitleMappingInfo.associate = function (models) {
-  BillingTitleMappingInfo.belongsTo(models.BillingTitleInfo, {
-    foreignKey: "billing_title_id",
-    as: "billing_title",
-  });
-  BillingTitleMappingInfo.belongsTo(models.LabelInfo, {
-    foreignKey: "label_id",
-    as: "label",
-  });
-  BillingTitleMappingInfo.belongsTo(models.BranchInfo, {
-    foreignKey: "branch_id",
-    as: "branch",
-  });
-  BillingTitleMappingInfo.belongsTo(models.User, {
-    foreignKey: "created_by",
-    as: "creator",
-  });
-};
+
+BillingTitleMappingInfo.belongsTo(BranchInfo, {
+  foreignKey: "branch_id",
+  targetKey: "branch_id",
+  as: "branchInfo",
+});
+
+
+BillingTitleMappingInfo.belongsTo(BillingTitleInfo, {
+  foreignKey: "billing_title_id",
+  targetKey: "billing_title_id",
+  as: "billingInfo",
+});
+
+
+
+BillingTitleMappingInfo.belongsTo(LabelInfo, {
+  foreignKey: "label_id",
+  targetKey: "id",
+  as: "labelInfo",
+});
+
+
+BillingTitleMappingInfo.belongsTo(User, {
+  foreignKey: "created_by",
+  targetKey: "user_id",
+  as: "userInfo",
+});
+
+module.exports = BillingTitleMappingInfo;

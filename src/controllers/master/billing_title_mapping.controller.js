@@ -1,9 +1,9 @@
 const logger = require("../../config/winstonLoggerConfig");
 const { billingTitleMappingService } = require("../../services/master");
 
-exports.createBillingMapping = async (req, res, next) => {
+const createBillingMapping = async (req, res, next) => {
   try {
-    const newMapping = await billingTitleMappingService.create(req.body);
+    const newMapping = await billingTitleMappingService.createBillingMapping(req.body);
     res.status(201).json(newMapping);
   } catch (error) {
     logger.error(
@@ -13,10 +13,15 @@ exports.createBillingMapping = async (req, res, next) => {
   }
 };
 
-exports.findAllBillingMapping = async (req, res, next) => {
+const findAllBillingMapping = async (req, res, next) => {
   try {
-    const mappings = await billingTitleMappingService.findAll(req.query);
-    res.json(mappings);
+    const mappings = await billingTitleMappingService.findAllBillingMapping(req.query);
+    res.status(200).json({
+      message: 'Billing title mapping list',
+      status: true,
+      data: mappings.rows,
+      total: mappings.count
+    });
   } catch (error) {
     logger.error(
       `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
@@ -25,7 +30,7 @@ exports.findAllBillingMapping = async (req, res, next) => {
   }
 };
 
-exports.findOneBillingMapping = async (req, res, next) => {
+const findOneBillingMapping = async (req, res, next) => {
   try {
     const mapping = await billingTitleMappingService.findOne(req.params.id);
     if (!mapping) return res.status(404).json({ error: "Mapping not found" });
@@ -38,9 +43,9 @@ exports.findOneBillingMapping = async (req, res, next) => {
   }
 };
 
-exports.updateBillingMapping = async (req, res, next) => {
+const updateBillingMapping = async (req, res, next) => {
   try {
-    const updatedMapping = await billingTitleMappingService.update(
+    const updatedMapping = await billingTitleMappingService.updateBillingMapping(
       req.params.id,
       req.body
     );
@@ -56,15 +61,26 @@ exports.updateBillingMapping = async (req, res, next) => {
   }
 };
 
-exports.deleteBillingMapping = async (req, res, next) => {
+const deleteBillingMapping = async (req, res, next) => {
   try {
-    const result = await billingTitleMappingService.delete(req.params.id);
+    const result = await billingTitleMappingService.deleteBillingMapping(req.params.id);
     if (!result) return res.status(404).json({ error: "Mapping not found" });
-    res.status(204).send();
+    res.status(204).send({
+      status: true,
+      message: "Mapping deleted successfully"
+    });
   } catch (error) {
     logger.error(
       `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
     );
     return next(error);
   }
+};
+
+module.exports = {
+  createBillingMapping,
+  updateBillingMapping,
+  deleteBillingMapping,
+  findAllBillingMapping,
+  findOneBillingMapping
 };

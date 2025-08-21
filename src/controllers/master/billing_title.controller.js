@@ -115,6 +115,33 @@ const deleteBillingTitle = async (req, res, next) => {
     return next(error);
   }
 };
+const getAllBillingTitleList = async (req, res, next) => {
+  try {
+    const billingTitles = await BillingTitleService.getAllBillingTitleList();
+    res.json({
+      success: true,
+      data: billingTitles,
+    });
+  } catch (error) {
+    console.error("Error fetching billing titles:", error);
+    next(error);
+  }
+};
+
+const getAllLabelList = async (req, res, next) => {
+  try {
+    const labels = await BillingTitleService.getAllLabelList();
+    res.json({
+      success: true,
+      data: labels,
+    });
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+};
 
 module.exports = {
   createBillingTitle,
@@ -122,4 +149,6 @@ module.exports = {
   getBillingTitleById,
   getBillingTitles,
   deleteBillingTitle,
+  getAllBillingTitleList,
+  getAllLabelList
 };

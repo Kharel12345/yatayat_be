@@ -4,15 +4,15 @@ const createSchema = Joi.object({
   billing_title_id: Joi.number().integer().required(),
   label_id: Joi.number().integer().required(),
   branch_id: Joi.number().integer().required(),
-  status: Joi.boolean().default(true),
   created_by: Joi.number().integer().required(),
+  status: Joi.number().required().valid(0, 1),
 });
 
 const updateSchema = Joi.object({
   billing_title_id: Joi.number().integer().optional(),
   label_id: Joi.number().integer().optional(),
   branch_id: Joi.number().integer().optional(),
-  status: Joi.boolean().optional(),
+  status: Joi.number().required().valid(0, 1),
 }).min(1);
 
 const createBillingTitleMappingValidation = (req, res, next) => {

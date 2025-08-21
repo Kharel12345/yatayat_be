@@ -1,21 +1,23 @@
-const { BillingTitleMappingInfo } = require("../../../models/master");
+const BranchInfo = require("../../../models/branch.model");
+const { BillingTitleMappingInfo, BillingTitleInfo } = require("../../../models/master");
+const LabelInfo = require("../../../models/master/label_info.model");
 
 const createBillingMapping = (data) => {
   return BillingTitleMappingInfo.create(data);
 };
 
-const findAllBillingMapping = (filters = {}) => {
+const findAllBillingMapping = async (filters = {}) => {
   const where = {};
   if (filters.branch_id) where.branch_id = filters.branch_id;
-  if (filters.status !== undefined) where.status = filters.status; else where.status = 1;
+  if (filters.status !== undefined) where.status = filters.status;
+  else where.status = 1;
 
-  return BillingTitleMappingInfo.findAll({
+  return await BillingTitleMappingInfo.findAndCountAll({
     where,
     include: [
-      { association: "billing_title" },
-      { association: "label" },
-      { association: "branch" },
-      { association: "creator" },
+      { model: BillingTitleInfo, as: "billingInfo", attributes: ['billing_title_id', 'billing_title'] },
+      { model: LabelInfo, as: "labelInfo", attributes: ['id', 'label_name'] },
+      { model: BranchInfo, as: "branchInfo", attributes: ["branch_id", "name"], },
     ],
   });
 };
