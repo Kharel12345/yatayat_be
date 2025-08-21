@@ -1,5 +1,7 @@
 // services/billingTitleInfo.service.js
+const { Op } = require("sequelize");
 const { BillingTitleInfo } = require("../../../models/master");
+const BranchInfo = require("../../../models/branch.model");
 
 const checkBillingTitleExists = async ({ billing_title_code }) => {
   return await BillingTitleInfo.findOne({
@@ -8,26 +10,26 @@ const checkBillingTitleExists = async ({ billing_title_code }) => {
 };
 
 const createBillingTitle = async (data) => {
-  const existing = await checkBillingTitleExists({
-    billing_title_code: data.billing_title_code,
-  });
-  if (existing) {
-    throw new Error("Billing title with this code already exists");
-  }
   return await BillingTitleInfo.create(data);
 };
 
-const getBillingTitles = async (page = 1, limit = 10) => {
+const getBillingTitles = async (page = 1, limit = 10, status) => {
   const offset = (page - 1) * limit;
 
   return await BillingTitleInfo.findAndCountAll({
-    where: { status: 1 },
+    where: { status },
     limit: parseInt(limit),
     offset: parseInt(offset),
     order: [["billing_title_id", "DESC"]],
+    include: [
+      {
+        model: BranchInfo,
+        as: "branch",
+        attributes: ["branch_id", "name"], // 👈 only fetch id + name
+      },
+    ],
   });
 };
-
 const getBillingTitleById = async (id) => {
   return await BillingTitleInfo.findOne({
     where: { billing_title_id: id, status: 1 },
@@ -35,21 +37,6 @@ const getBillingTitleById = async (id) => {
 };
 
 const updateBillingTitle = async (id, data) => {
-  // Check if billing_title_code in data and is being changed
-  if (data.billing_title_code !== undefined) {
-    // Find if another record with same billing_title_code exists and is NOT the current record
-    const existing = await BillingTitleInfo.findOne({
-      where: {
-        billing_title_code: data.billing_title_code,
-        status: 1,
-        billing_title_id: { [Op.ne]: id }, // Exclude current record
-      },
-    });
-    if (existing) {
-      throw new Error("Billing title code already exists for another record");
-    }
-  }
-
   return await BillingTitleInfo.update(data, {
     where: { billing_title_id: id },
   });
@@ -67,4 +54,5 @@ module.exports = {
   getBillingTitleById,
   updateBillingTitle,
   softDeleteBillingTitle,
+  checkBillingTitleExists
 };

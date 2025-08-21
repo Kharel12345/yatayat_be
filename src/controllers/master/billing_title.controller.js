@@ -1,11 +1,24 @@
 // controllers/billingTitleInfo.controller.js
+const { Op } = require("sequelize");
 const logger = require("../../config/winstonLoggerConfig");
 const { DATA_SAVED, SUCCESS_API_FETCH } = require("../../helpers/response");
 const { BillingTitleService } = require("../../services/master");
+const { BillingTitleInfo } = require("../../../models/master");
 
 
 const createBillingTitle = async (req, res, next) => {
   try {
+
+    const existing = await BillingTitleService.checkBillingTitleExists({
+      billing_title_code: req.body.billing_title_code,
+    });
+
+    if (existing) {
+      return res.status(208).json({
+        status: false,
+        message: "Billing code already exits!!! "
+      });
+    }
     const newTitle = await BillingTitleService.createBillingTitle(
       req.body
     );
@@ -20,8 +33,8 @@ const createBillingTitle = async (req, res, next) => {
 
 const getBillingTitles = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const data = await BillingTitleService.getBillingTitles(page, limit);
+    const { page = 1, limit = 10, status } = req.query;
+    const data = await BillingTitleService.getBillingTitles(page, limit, status);
 
     res.json({
       total: data.count,
@@ -52,13 +65,33 @@ const getBillingTitleById = async (req, res, next) => {
 
 const updateBillingTitle = async (req, res, next) => {
   try {
-    const [updated] = await BillingTitleService.updateBillingTitle(
+
+    const existing = await BillingTitleInfo.findOne({
+      where: {
+        billing_title_code: req.body.billing_title_code,
+        status: 1,
+        billing_title_id: { [Op.ne]: req.params.id },
+      },
+    });
+
+
+    if (existing) {
+      return res.status(208).json({
+        status: false,
+        message: "Billing title code already exits!!! "
+      });
+    }
+
+    await BillingTitleService.updateBillingTitle(
       req.params.id,
       req.body
     );
-    if (!updated) return res.status(404).json({ error: "Not found" });
 
-    res.json({ message: "Updated successfully" });
+    res.status(201).json({
+      status: true,
+      message: "Billing title updated successfully!!!"
+    });
+
   } catch (error) {
     logger.error(
       `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`

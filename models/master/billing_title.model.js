@@ -1,5 +1,6 @@
 const { DataTypes, Model } = require("sequelize");
 const sequelize = require("../../src/config/database");
+const BranchInfo = require("../branch.model");
  
 
 const BillingTitleInfo = sequelize.define(
@@ -46,5 +47,11 @@ const BillingTitleInfo = sequelize.define(
     updatedAt: "updated_at",
   }
 );
+
+BillingTitleInfo.belongsTo(BranchInfo, {
+  foreignKey: "branch_id",
+  targetKey: "branch_id",
+  as: "branch",
+});
 
 module.exports = BillingTitleInfo;

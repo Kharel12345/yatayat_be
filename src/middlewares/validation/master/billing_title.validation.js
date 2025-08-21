@@ -7,7 +7,8 @@ const createBillingTitleSchema = Joi.object({
   rate: Joi.number().precision(2).required(),
   branch_id: Joi.number().integer().required(),
   functional_year_id: Joi.number().integer().required(),
-  created_by: Joi.number().integer().required()
+  created_by: Joi.number().integer().required(),
+  status: Joi.number().integer().valid(0, 1)
 });
 
 const updateBillingTitleSchema = Joi.object({
