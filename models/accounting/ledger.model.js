@@ -1,5 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../src/config/database');
+const AccountingLedgerGroup = require('./ledgergroup.model');
+const AccountingLedgerSubGroup = require('./ledgersubgroup.model');
+const BranchInfo = require('../branch.model');
 
 const LedgerInfo = sequelize.define('LedgerInfo', {
   id: {
@@ -70,5 +73,24 @@ const LedgerInfo = sequelize.define('LedgerInfo', {
   tableName: 'accounting_ledgerinfo',
   timestamps: false,
 });
+
+LedgerInfo.belongsTo(BranchInfo, {
+  foreignKey: "branch_id",
+  targetKey: "branch_id",
+  as: "branch",
+});
+
+LedgerInfo.belongsTo(AccountingLedgerGroup, {
+  foreignKey: "master_ledger_group_id",
+  targetKey: "id",
+  as: "ledgerGroup",
+});
+
+LedgerInfo.belongsTo(AccountingLedgerSubGroup, {
+  foreignKey: "ledger_sub_group_id",
+  targetKey: "id",
+  as: "ledgerSubGroup",
+});
+
 
 module.exports = LedgerInfo;

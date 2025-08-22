@@ -7,7 +7,8 @@ const AccountingLedgerGroup = require("../../../models/accounting/ledgergroup.mo
 const AccountingLedgerSubGroup = require("../../../models/accounting/ledgersubgroup.model");
 const AccountingLedgerMapping = require("../../../models/accounting/ledgermapping.model");
 const LedgerInfo = require("../../../models/accounting/ledger.model");
-const { Sequelize } = require("sequelize");
+const { Sequelize, Op } = require("sequelize");
+const BranchInfo = require("../../../models/branch.model");
 
 const getledgerGrouplist = async () => {
   try {
@@ -35,55 +36,95 @@ const getledgerSubGrouplist = async () => {
 
 const saveLedger = async (jsonObject) => {
   try {
-    const result = AccountingLedgerInfo.saveLedger(jsonObject);
+    const result = LedgerInfo.create(jsonObject);
     return result;
   } catch (error) {
     throw new Error(error);
   }
 };
 
-const getLedgerPagination = async (
-  limit,
-  offset,
-  status,
-  ledgerName,
-  viewAll,
-  user_id
-) => {
+// const getLedgerPagination = async (
+//   limit,
+//   offset,
+//   status,
+//   ledgerName,
+//   viewAll,
+//   user_id
+// ) => {
+//   try {
+//     let { data, total } = await AccountingLedgerInfo.getLedgerPagination(
+//       limit,
+//       offset,
+//       status,
+//       ledgerName,
+//       viewAll,
+//       user_id
+//     );
+//     let cal = new Nepali_Calendar();
+
+//     data = data.map((d) => {
+//       d = {
+//         ...d,
+//         opening_balance_date_bs: cal.ADToBsConvert(
+//           getFormattedDate(d.opening_balance_date)
+//         ),
+//         transaction_type: d.credit == 0 ? "Debit" : "Credit",
+//       };
+//       return d;
+//     });
+
+//     return { data, total };
+//   } catch (error) {
+//     throw new Error(error);
+//   }
+// };
+
+const getLedgerPagination = async (limit, offset, status, ledgerName, user_id) => {
   try {
-    let { data, total } = await AccountingLedgerInfo.getLedgerPagination(
+    const whereClause = {};
+    if (status !== undefined) whereClause.status = status;
+    if (ledgerName) whereClause.ledgername = { [Op.like]: `%${ledgerName}%` };
+    if (user_id) whereClause.created_by = user_id;
+
+    // Ensure numeric
+    limit = parseInt(limit) || 10;
+    offset = parseInt(offset) || 0;
+
+    const data = await LedgerInfo.findAndCountAll({
+      where: whereClause,
       limit,
       offset,
-      status,
-      ledgerName,
-      viewAll,
-      user_id
-    );
-    let cal = new Nepali_Calendar();
-
-    data = data.map((d) => {
-      d = {
-        ...d,
-        opening_balance_date_bs: cal.ADToBsConvert(
-          getFormattedDate(d.opening_balance_date)
-        ),
-        transaction_type: d.credit == 0 ? "Debit" : "Credit",
-      };
-      return d;
+      order: [['id', 'DESC']], // ensure your DB really has "id" column
+      include: [
+        {
+          model: BranchInfo,
+          as: "branch",
+          attributes: ["branch_id", "name"], // 👈 only fetch id + name
+        },
+        {
+          model: AccountingLedgerGroup,
+          as: "ledgerGroup",
+          attributes: ["id", "ledger_group_name"], // 👈 only fetch id + name
+        },
+        {
+          model: AccountingLedgerSubGroup,
+          as: "ledgerSubGroup",
+          attributes: ["id", "sub_group_name"], // 👈 only fetch id + name
+        },
+      ],
     });
-
-    return { data, total };
+    return data;
+    // return { rows, count };
   } catch (error) {
-    throw new Error(error);
+    console.error(error);
+    throw error;
   }
 };
 
 const updateLedger = async (jsonObject, logDetails) => {
+  const { ledger_id, ...rest } = jsonObject;
   try {
-    const result = await AccountingLedgerInfo.updateLedger(
-      jsonObject,
-      logDetails
-    );
+    const result = await LedgerInfo.update(rest, { where: { id: ledger_id } });
     return result;
   } catch (error) {
     throw new Error(error);

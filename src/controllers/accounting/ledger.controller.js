@@ -30,7 +30,11 @@ const getledgerGrouplist = async (req, res, next) => {
 const getledgerSubGrouplist = async (req, res, next) => {
   try {
     const ledgerSubGroup = await ledgerServices.getledgerSubGrouplist();
-    return res.status(200).json(SUCCESS_API_FETCH(ledgerSubGroup));
+    return res.status(200).json({
+      status: true,
+      message: "Data found successfully!!!",
+      data: ledgerSubGroup
+    });
   } catch (error) {
     logger.error(
       `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
@@ -42,7 +46,7 @@ const getledgerSubGrouplist = async (req, res, next) => {
 const saveLedger = async (req, res, next) => {
   try {
     const {
-      ledger_name,
+      ledgername,
       master_ledger_group_id,
       ledger_sub_group_id,
       address,
@@ -97,14 +101,13 @@ const saveLedger = async (req, res, next) => {
     // }
 
     const jsonObject = {
-      ledger_name,
+      ledgername,
       master_ledger_group_id,
       ledger_sub_group_id,
       ledger_type: "Accounting",
       address,
       contact,
-      opening_balance_date_ad,
-      opening_balance_date_bs,
+      opening_balance_date: opening_balance_date_bs,
       opening_balance,
       transaction_type,
       status,
@@ -126,29 +129,29 @@ const saveLedger = async (req, res, next) => {
 
 const getLedgerPagination = async (req, res, next) => {
   try {
-    const ledgerName = req.query.ledgerName || "";
+    const ledgername = req.query.ledgerName || "";
     const status = parseInt(req.query.status);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const viewAll =
-      req.permission["ledger"] &&
-      req.permission["ledger"].includes("viewall_ledger");
+    // const viewAll =
+    //   req.permission["ledger"] &&
+    //   req.permission["ledger"].includes("viewall_ledger");
 
-    let { data, total } = await ledgerServices.getLedgerPagination(
+    let data = await ledgerServices.getLedgerPagination(
       limit,
       offset,
       status,
-      ledgerName,
-      viewAll,
+      ledgername,
+      // viewAll,
       req.user.user_id
     );
 
     return res.status(200).json({
       status: true,
       message: "Data found successfully!!!",
-      data: data,
-      total: total[0].total,
+      data: data.rows,
+      total: data.count,
     });
   } catch (error) {
     logger.error(
@@ -162,7 +165,7 @@ const updateLedger = async (req, res, next) => {
   try {
     const {
       ledger_id,
-      ledger_name,
+      ledgername,
       master_ledger_group_id,
       ledger_sub_group_id,
       address,
@@ -209,13 +212,13 @@ const updateLedger = async (req, res, next) => {
 
     const jsonObject = {
       ledger_id,
-      ledger_name,
+      ledgername,
       master_ledger_group_id,
       ledger_sub_group_id,
       address,
       contact,
-      opening_balance_date_ad,
-      opening_balance_date_bs,
+      // opening_balance_date_ad,
+      opening_balance_date: opening_balance_date_bs,
       opening_balance,
       transaction_type,
       status,
