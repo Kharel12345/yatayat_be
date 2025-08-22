@@ -161,6 +161,18 @@ const getLedgerPagination = async (req, res, next) => {
   }
 };
 
+const getAllLedgerList = async (req, res, next) => {
+  try {
+    const ledger = await ledgerServices.getAllLedgerList();
+    return res.status(200).json(SUCCESS_API_FETCH(ledger));
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+};
+
 const updateLedger = async (req, res, next) => {
   try {
     const {
@@ -269,7 +281,7 @@ const getLedgerMappingPagination = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
-    let { data, total } = await ledgerServices.getLedgerMappingPagination(
+    const data = await ledgerServices.getLedgerMappingPagination(
       limit,
       offset
     );
@@ -277,8 +289,8 @@ const getLedgerMappingPagination = async (req, res, next) => {
     return res.status(200).json({
       status: true,
       message: "Data found successfully!!!",
-      data: data,
-      total: total[0].total,
+      data: data?.rows,
+      total: data?.count,
     });
   } catch (error) {
     logger.error(
@@ -309,4 +321,5 @@ module.exports = {
   saveLedgerMapping,
   getLedgerMappingPagination,
   getActiveLedger,
+  getAllLedgerList
 };

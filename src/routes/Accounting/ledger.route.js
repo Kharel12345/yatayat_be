@@ -39,6 +39,14 @@ router
   );
 
 router
+  .route("/getallledgerlist")
+  .get(
+    auth,
+    // preauthorize("view_ledger"),
+    ledgerControllers.getAllLedgerList
+  );
+
+router
   .route("/updateledger")
   .put(
     auth,

@@ -133,8 +133,26 @@ const updateLedger = async (jsonObject, logDetails) => {
 
 const saveLedgerMapping = async (body) => {
   try {
-    const result = await AccountingLedgerMapping.saveLedgerMapping(body);
+    const result = await AccountingLedgerMapping.update({
+      ledger_id: body.ledger_id,
+    }, {
+      where: {
+        id: body.id
+      }
+    });
     return result;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+const getAllLedgerList = async () => {
+  try {
+    const ledger = await LedgerInfo.findAll({
+      attributes: ["id", "ledgername"],
+      where: { status: 1 },
+    });
+    return ledger;
   } catch (error) {
     throw new Error(error);
   }
@@ -142,16 +160,21 @@ const saveLedgerMapping = async (body) => {
 
 const getLedgerMappingPagination = async (limit, offset) => {
   try {
-    let { data, total } =
-      await getLedgerMappingModelPagination(limit, offset);
-    data = data.map((d) => {
-      d = {
-        ...d,
-        ledger_id: d.ledger_id == 0 ? "" : d.ledger_id,
-      };
-      return d;
+
+    const data = await AccountingLedgerMapping.findAndCountAll({
+      limit,
+      offset,
+      include: [
+        {
+          model: LedgerInfo,
+          as: 'ledgerInfo',
+          attributes: ['id', 'ledgername'], // select the fields you need
+          required: false, // will still return AccountingLedgerMapping even if ledger_id = 0
+        },
+      ],
+      order: [['id', 'ASC']],
     });
-    return { data, total };
+    return data;
   } catch (error) {
     throw new Error(error);
   }
@@ -248,5 +271,6 @@ module.exports = {
   getActiveLedger,
   getAssociatedLedgerId,
   getMappedLedgerIdByLabel,
-  getLedgerForVechileRegistration
+  getLedgerForVechileRegistration,
+  getAllLedgerList
 };
