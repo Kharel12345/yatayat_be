@@ -4,12 +4,13 @@ const { vehicleService } = require("../../services/master");
 
 const createVehicle = async (req, res, next) => {
   try {
+
     // Basic vehicle data
     const vehicleData = {
       ...req.body,
       createdBy: req.user.user_id,
       photo: req.files?.photo?.[0]?.filename || null, // vehicle photo
-      billBookPhoto: req.files?.billBookPhoto?.[0]?.filename || null, // vehicle photo
+      billbookphoto: req.files?.billBookPhoto?.[0]?.filename || null, // vehicle photo
       licensePaper: req.files?.licensePaper?.[0]?.filename || null,
       insurancePaper: req.files?.insurancePaper?.[0]?.filename || null,
     };

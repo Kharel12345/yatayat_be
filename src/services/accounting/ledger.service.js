@@ -224,6 +224,18 @@ const getMappedLedgerIdByLabel = async (ledgerName) => {
   }
 };
 
+const getLedgerForVechileRegistration = async () => {
+  const ledgerInfo = await AccountingLedgerGroup.findOne({
+    attributes: ['ledger_group_name', 'id'],
+    where: {
+      ledger_group_name: 'Account Payable'
+    }
+  });
+
+  return ledgerInfo;
+};
+
+
 module.exports = {
   getledgerGrouplist,
   getledgerSubGrouplist,
@@ -236,4 +248,5 @@ module.exports = {
   getActiveLedger,
   getAssociatedLedgerId,
   getMappedLedgerIdByLabel,
+  getLedgerForVechileRegistration
 };
