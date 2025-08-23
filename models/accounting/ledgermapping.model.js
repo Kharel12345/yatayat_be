@@ -1,7 +1,8 @@
 "use strict";
-const sequelize = require('../../src/config/database');
+const sequelize = require("../../src/config/database");
 
 const { DataTypes } = require("sequelize");
+const LedgerInfo = require("./ledger.model");
 const AccountingLedgerMapping = sequelize.define(
   "AccountingLedgerMapping",
   {
@@ -25,5 +26,10 @@ const AccountingLedgerMapping = sequelize.define(
     timestamps: false,
   }
 );
+
+AccountingLedgerMapping.belongsTo(LedgerInfo, {
+  foreignKey: "ledger_id",
+  as: "ledger",
+});
 
 module.exports = AccountingLedgerMapping;

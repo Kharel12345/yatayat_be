@@ -278,7 +278,7 @@ const getLedgerMappingPagination = async (req, res, next) => {
       status: true,
       message: "Data found successfully!!!",
       data: data,
-      total: total[0].total,
+      total: total,
     });
   } catch (error) {
     logger.error(

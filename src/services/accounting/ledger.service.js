@@ -144,13 +144,7 @@ const getLedgerMappingPagination = async (limit, offset) => {
   try {
     let { data, total } =
       await getLedgerMappingModelPagination(limit, offset);
-    data = data.map((d) => {
-      d = {
-        ...d,
-        ledger_id: d.ledger_id == 0 ? "" : d.ledger_id,
-      };
-      return d;
-    });
+
     return { data, total };
   } catch (error) {
     throw new Error(error);

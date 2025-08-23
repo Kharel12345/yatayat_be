@@ -37,4 +37,10 @@ router.put(
 );
 router.delete("/deletememberregistartion/:id", vehicleController.deleteVehicle);
 
+router.get(
+  "/getvechiles-dropdown",
+  auth,
+  vehicleController.getVechilesForDropdown
+);
+
 module.exports = router;
