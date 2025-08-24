@@ -2,6 +2,7 @@
 const sequelize = require("../../src/config/database");
 
 const { DataTypes } = require("sequelize");
+const LedgerInfo = require("./ledger.model");
 const AccountingLedgerMapping = sequelize.define(
   "AccountingLedgerMapping",
   {
