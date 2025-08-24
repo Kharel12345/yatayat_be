@@ -395,10 +395,23 @@ const deleteVehicle = async (id) => {
   }
 };
 
+const getVechilesForDropdown = async () => {
+  const ledgers = await LedgerInfo.findAll({
+    where: {
+      status: 1,
+      ledger_type: "Transportation",
+    },
+    order: [["id", "DESC"]],
+  });
+
+  return ledgers.map((ledger) => ledger.get({ plain: true }));
+};
+
 module.exports = {
   createVehicle,
   updateVehicle,
   getVehicleById,
   getVehiclesPaginated,
   deleteVehicle,
+  getVechilesForDropdown,
 };

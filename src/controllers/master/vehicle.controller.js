@@ -4,7 +4,6 @@ const { vehicleService } = require("../../services/master");
 
 const createVehicle = async (req, res, next) => {
   try {
-
     // Basic vehicle data
     const vehicleData = {
       ...req.body,
@@ -38,7 +37,6 @@ const createVehicle = async (req, res, next) => {
       key.startsWith("driverPhoto")
     );
 
-
     // Map photos to drivers
     if (req.body.drivers?.length) {
       vehicleData.drivers = req.body.drivers.map((d, index) => {
@@ -65,8 +63,22 @@ const createVehicle = async (req, res, next) => {
 
 const getVehiclesPaginated = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, organization, vehicle_no, date_bs, from_date_bs, to_date_bs } = req.query;
-    const result = await vehicleService.getVehiclesPaginated(page, limit, { organization, vehicle_no, date_bs, from_date_bs, to_date_bs });
+    const {
+      page = 1,
+      limit = 10,
+      organization,
+      vehicle_no,
+      date_bs,
+      from_date_bs,
+      to_date_bs,
+    } = req.query;
+    const result = await vehicleService.getVehiclesPaginated(page, limit, {
+      organization,
+      vehicle_no,
+      date_bs,
+      from_date_bs,
+      to_date_bs,
+    });
     res.json(SUCCESS_API_FETCH(result));
   } catch (error) {
     logger.error(
@@ -115,10 +127,23 @@ const deleteVehicle = async (req, res, next) => {
   }
 };
 
+const getVechilesForDropdown = async (req, res, next) => {
+  try {
+    const vehicles = await vehicleService.getVechilesForDropdown();
+    res.json(SUCCESS_API_FETCH(vehicles));
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+};
+
 module.exports = {
   createVehicle,
   getVehicleById,
   getVehiclesPaginated,
   updateVehicle,
   deleteVehicle,
+  getVechilesForDropdown,
 };
