@@ -5,7 +5,7 @@ const auth = require('../../middlewares/auth');
 
 // Serve images from uploads folder
 router.get('/fetchimage/:filename',
-    auth,
+    // auth,
     uploadController.getImage);
 
 
