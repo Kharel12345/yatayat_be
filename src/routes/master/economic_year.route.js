@@ -1,11 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const { economicYearControllers } = require("../../controllers/master");
+const {
+  economicYearControllers,
+  categoryController,
+} = require("../../controllers/master");
 const {
   setupEconomicYearValidation,
- 
 } = require("../../middlewares/validation/master");
 const auth = require("../../middlewares/auth");
+const { getReceiptNo } = require("../../utils/index_info");
 // const { preauthorize } = require("../../utils/preAuthorize");
 
 router.post(
@@ -28,5 +31,7 @@ router.get(
   auth,
   economicYearControllers.getEconomicYearList
 );
+
+router.get("/getlatestreceiptno", auth, categoryController.getLatestReceiptNo);
 
 module.exports = router;

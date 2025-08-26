@@ -6,6 +6,7 @@ const subCategoryService = require("./sub_category.service");
 const BillingTitleService = require("./billing_title.service");
 const billingTitleMappingService= require('./billing_title_mapping.service');
 const vehicleBillingService = require("./vehicle_billing.service");
+const IndexInfo= require('./index_info.service');
 
 module.exports = {
   economicYearServices,
@@ -15,5 +16,6 @@ module.exports = {
   categoryService,
   subCategoryService,
   BillingTitleService,
-  billingTitleMappingService
+  billingTitleMappingService,
+  IndexInfo
 };
