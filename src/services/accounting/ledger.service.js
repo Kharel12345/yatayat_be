@@ -258,6 +258,18 @@ const getLedgerForVechileRegistration = async () => {
   return ledgerInfo;
 };
 
+const getBankLedger = async () => {
+  try {
+    let result = await LedgerInfo.findAll({
+      attributes: ["id", "ledgername"],
+      where: { master_ledger_group_id: 3, status: 1 },
+    });
+    return result;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
 
 module.exports = {
   getledgerGrouplist,
@@ -272,5 +284,6 @@ module.exports = {
   getAssociatedLedgerId,
   getMappedLedgerIdByLabel,
   getLedgerForVechileRegistration,
-  getAllLedgerList
+  getAllLedgerList,
+  getBankLedger
 };

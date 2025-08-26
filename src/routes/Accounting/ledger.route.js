@@ -73,5 +73,6 @@ router
     ledgerControllers.getLedgerMappingPagination
   );
 router.route("/getactiveledger").get(auth, ledgerControllers.getActiveLedger);
+router.route('/getbankledger').get(auth, ledgerControllers.getBankLedger);
 
 module.exports = router;

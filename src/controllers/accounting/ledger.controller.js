@@ -312,6 +312,18 @@ const getActiveLedger = async (req, res, next) => {
   }
 };
 
+const getBankLedger = async (req, res, next) => {
+  try {
+    const ledger = await ledgerServices.getBankLedger();
+    return res.status(200).json(SUCCESS_API_FETCH(ledger));
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+}
+
 module.exports = {
   getledgerGrouplist,
   getledgerSubGrouplist,
@@ -321,5 +333,6 @@ module.exports = {
   saveLedgerMapping,
   getLedgerMappingPagination,
   getActiveLedger,
-  getAllLedgerList
+  getAllLedgerList,
+  getBankLedger
 };
