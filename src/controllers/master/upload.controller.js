@@ -53,11 +53,13 @@ const getImage = async (req, res, next) => {
         contentType = "application/octet-stream";
     }
 
-    // Set headers
     res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Length", stats.size);
-    res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
+    res.setHeader("Cache-Control", "public, max-age=31536000");
 
+    // ✅ CORS fix for <img>, <Image> components to load image from another origin
+    res.setHeader("Access-Control-Allow-Origin", "*"); // Or use exact domain like "http://localhost:3000"
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     // Stream the file
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);

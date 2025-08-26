@@ -28,8 +28,9 @@ const AccountingLedgerMapping = sequelize.define(
 );
 
 AccountingLedgerMapping.belongsTo(LedgerInfo, {
-  foreignKey: "ledger_id",
-  as: "ledger",
+  foreignKey: 'ledger_id',
+  targetKey: 'id',
+  as: 'ledgerInfo',
 });
 
 module.exports = AccountingLedgerMapping;

@@ -51,7 +51,7 @@ const softDeleteBillingTitle = async (id) => {
 
 const getAllBillingTitleList = async () => {
   return await BillingTitleInfo.findAll({
-    attributes: ["billing_title_id", "billing_title"], // only select these fields
+    attributes: ["billing_title_id", "billing_title", "rate"], // only select these fields
     where: { status: 1 }, // optional: only active
     order: [["billing_title", "DESC"]], // optional: sort alphabetically
   });
