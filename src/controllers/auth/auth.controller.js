@@ -94,10 +94,31 @@ const getUserDetailsById = asyncHandler(async (req, res, next) => {
     return res.status(200).json(result)
 })
 
+const getUserPermission = asyncHandler(async (req, res, next) => {
+    const result = await authServices.getUserPermission(req.params.id);
+    return res.status(200).json(result);
+});
+
+const getUserList = asyncHandler(async (req, res, next) => {
+    const result = await authServices.getUserList();
+    return res.status(200).json(result);
+});
+
+const updateUserPermission = asyncHandler(async (req, res, next) => {
+    await authServices.updateUserPermission(req.params.id, req.body, req.user.user_id);
+    return res.status(200).json({
+        status: true,
+        message: "User permission updated successfully"
+    });
+});
+
 module.exports = {
     login,
     logout,
     refresh,
     getUserDetails,
-    getUserDetailsById
+    getUserDetailsById,
+    getUserPermission,
+    getUserList,
+    updateUserPermission
 }

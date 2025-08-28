@@ -1,4 +1,4 @@
-const individualLedgerReport = require("./account_report.route");
+const individualLedgerReport = require('./account_report.route');
 
 module.exports = {
   individualLedgerReport,

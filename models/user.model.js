@@ -1,6 +1,7 @@
 // // models/user.js
 const { DataTypes, Sequelize } = require('sequelize');
 const sequelize = require('../src/config/database');
+const UserPermissionInfo = require('./userpermission.model');
 
 const User = sequelize.define('User', {
     user_id: {
@@ -56,6 +57,13 @@ const User = sequelize.define('User', {
 }, {
   tableName: 'user',
   timestamps: false
+});
+
+
+User.belongsTo(UserPermissionInfo, {
+  foreignKey: "user_id",
+  targetKey: "user_id",
+  as: "permissionInfo",
 });
 
 

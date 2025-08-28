@@ -1,10 +1,11 @@
 const logger = require("../../config/winstonLoggerConfig");
+const { ledgerReportService } = require("../../services/report");
 
-const getIndividualLedgerReport = asyncHandler(async (req, res, next) => {
+const getIndividualLedgerReport = async (req, res, next) => {
   try {
     let { fromDate, toDate, ledger_id } = req.query;
 
-    const result = await reportServices.getIndividualLedgerReport(
+    const result = await ledgerReportService.getIndividualLedgerReport(
       fromDate,
       toDate,
       ledger_id
@@ -21,7 +22,7 @@ const getIndividualLedgerReport = asyncHandler(async (req, res, next) => {
     );
     return next(error);
   }
-});
+};
 
 module.exports = {
   getIndividualLedgerReport,

@@ -1,7 +1,6 @@
 const accounting_transaction_detailModel = require("../../../models/accounting/accounting_transaction_detail.model");
 const LedgerInfo = require("../../../models/accounting/ledger.model");
 const AccountingLedgerGroup = require("../../../models/accounting/ledgergroup.model");
-const { sequelize } = require("../models");
 const { Op } = require("sequelize");
 
 const getIndividualLedgerReport = async (fromDate, toDate, ledgerId) => {

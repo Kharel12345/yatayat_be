@@ -1,14 +1,15 @@
 // routes/billingTitleInfo.routes.js
 const express = require("express");
-const { individualLedgerReportValidation } = require("../../middlewares/indivudual_ledger_report.validation");
 const { individualLedgerReport } = require("../../controllers/report");
+const auth = require("../../middlewares/auth");
+
 const router = express.Router();
 
 router
   .route("/getindividualledgerreport")
   .get(
     auth,
-    individualLedgerReportValidation,
+  // individualLedgerReportValidation,
     individualLedgerReport.getIndividualLedgerReport
   );
 

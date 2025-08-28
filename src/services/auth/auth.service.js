@@ -13,6 +13,7 @@ const {
 const axios = require("axios");
 const RefreshToken = require("../../../models/refreshToken.model");
 const { Op } = require("sequelize");
+const UserPermissionInfo = require("../../../models/userpermission.model");
 
 const findUser = async (username) => {
   return await User.findOne({ where: { username } });
@@ -89,11 +90,47 @@ const getUserDetails = async () => {
 const getUserDetailsById = async (user_id) => {
   const user = await User.findOne({
     where: { user_id },
-    attributes: { exclude: ['password'] }
+    attributes: { exclude: ['password'] },
+    include: [
+      {
+        model: UserPermissionInfo,
+        as: "permissionInfo",
+      },
+    ],
+
   });
 
   return user;
 };
+
+const getUserPermission = async (user_id) => {
+  const user = await UserPermissionInfo.findOne({
+    where: { status: 1, user_id },
+  });
+
+  return user;
+};
+
+const getUserList = async () => {
+  return await User.findAll({
+    where: { status: 1 },
+    exclude: ['password']
+  });
+};
+
+const updateUserPermission = async (user_id, permission, created_by) => {
+  const existing = await UserPermissionInfo.findOne({ where: { user_id } });
+
+  if (existing) {
+    await existing.update({ permission, created_by });
+    return { record: existing, created: false };
+  } else {
+    const newRecord = await UserPermissionInfo.create({ user_id, permission, created_by });
+    return { record: newRecord, created: true };
+  }
+};
+
+
 
 module.exports = {
   logout,
@@ -103,5 +140,8 @@ module.exports = {
   validatePassword,
   createRefreshToken,
   getUserDetails,
-  getUserDetailsById
+  getUserDetailsById,
+  getUserPermission,
+  getUserList,
+  updateUserPermission
 };

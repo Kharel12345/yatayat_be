@@ -7,6 +7,10 @@ const auth = require('../middlewares/auth')
 router.route('/login').post(validateLogin, authControllers.login);
 router.route('/logout').post(auth, authControllers.logout)
 router.route('/getuserdetails').get(auth, authControllers.getUserDetails)
-router.route('/me').get(auth, authControllers.getUserDetailsById)
+router.route('/me').get(auth, authControllers.getUserDetailsById);
+router.route('/userpermission/:id').get(authControllers.getUserPermission);
+router.route('/users').get(auth, authControllers.getUserList);
+router.route('/updateuserpermission/:id').post(auth, authControllers.updateUserPermission);
+
 
 module.exports = router
