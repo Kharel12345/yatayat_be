@@ -3,12 +3,12 @@ const { invoiceControllers } = require("../../controllers/accounting");
 const router = express.Router();
 
 // Invoice routes
-router.post("/", invoiceControllers.createInvoice);
-router.get("/", invoiceControllers.getAllInvoices);
-router.get("/dashboard/stats", invoiceControllers.getDashboardStats);
-router.get("/renewal-reminders", invoiceControllers.getRenewalReminders);
-router.get("/vehicle/:vehicleId", invoiceControllers.getInvoicesByVehicle);
-router.get("/:id", invoiceControllers.getInvoiceById);
-router.put("/:id", invoiceControllers.updateInvoice);
+router.post("/createinvoice", invoiceControllers.createInvoice);
+router.get("/getallinvoice", invoiceControllers.getAllInvoices);
+router.get("/getinvoicedashboard/stats", invoiceControllers.getDashboardStats);
+router.get("/fetch-renewal-reminders", invoiceControllers.getRenewalReminders);
+router.get("/fetchvehiclebyinvoice/:vehicleId", invoiceControllers.getInvoicesByVehicle);
+router.get("/getinvoicebyid:id", invoiceControllers.getInvoiceById);
+router.put("/updateinvoice:id", invoiceControllers.updateInvoice);
 
 module.exports = router;
