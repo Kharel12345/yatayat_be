@@ -19,6 +19,10 @@ const findUser = async (username) => {
   return await User.findOne({ where: { username } });
 };
 
+const findUserById = async (user_id) => {
+  return await User.findOne({ where: { user_id } });
+};
+
 const validatePassword = async (password, user) => {
   return await bcrypt.compare(password, user.password);
 };
@@ -130,6 +134,10 @@ const updateUserPermission = async (user_id, permission, created_by) => {
   }
 };
 
+const changePassword = async (user_id, password) => {
+  return await User.update({ password }, { where: { user_id } });
+};
+
 
 
 module.exports = {
@@ -143,5 +151,7 @@ module.exports = {
   getUserDetailsById,
   getUserPermission,
   getUserList,
-  updateUserPermission
+  updateUserPermission,
+  changePassword,
+  findUserById
 };

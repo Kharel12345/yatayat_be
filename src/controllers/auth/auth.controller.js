@@ -3,6 +3,7 @@ const { authServices, jwtServices } = require('../../services/auth');
 const { JWT_SECRET, JWT_EXPIRY, REFRESH_SECRET, REFRESH_EXPIRY, COOKIE_EXPIRY } = require('../../config/constant');
 const CustomErrorHandler = require('../../utils/CustomErrorHandler');
 const logger = require('../../config/winstonLoggerConfig');
+const bcrypt = require("bcryptjs");
 
 const login = asyncHandler(async (req, res, next) => {
     const { username, password, captchaResponse } = req.body
@@ -112,6 +113,30 @@ const updateUserPermission = asyncHandler(async (req, res, next) => {
     });
 });
 
+const changePassword = asyncHandler(async (req, res, next) => {
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await authServices.findUserById(req.user.user_id);
+
+    const validatePassword = await authServices.validatePassword(oldPassword, user?.dataValues);
+
+    if (!user || !validatePassword) {
+        return res.status(200).json({
+            status: false,
+            message: "Invalid old password"
+        });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+
+    await authServices.changePassword(req.user.user_id, hashedPassword);
+    return res.status(200).json({
+        status: true,
+        message: "Password changed successfully"
+    });
+});
+
 module.exports = {
     login,
     logout,
@@ -120,5 +145,6 @@ module.exports = {
     getUserDetailsById,
     getUserPermission,
     getUserList,
-    updateUserPermission
+    updateUserPermission,
+    changePassword
 }

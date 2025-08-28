@@ -2,6 +2,7 @@
 const { DataTypes, Sequelize } = require('sequelize');
 const sequelize = require('../src/config/database');
 const UserPermissionInfo = require('./userpermission.model');
+const BranchInfo = require('./branch.model');
 
 const User = sequelize.define('User', {
     user_id: {
