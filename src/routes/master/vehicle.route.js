@@ -17,6 +17,8 @@ router.post(
     { name: "billBookPhoto", maxCount: 1 },
     { name: "licensePaper", maxCount: 1 },
     { name: "insurancePaper", maxCount: 1 },
+    { name: "routePermit", maxCount: 1 },
+    { name: "jachPass", maxCount: 1 },
     { name: "operatorPhoto", maxCount: 1 },
     { name: "helperPhoto", maxCount: 1 },
     { name: "driverPhoto[0]", maxCount: 5 },
@@ -32,6 +34,19 @@ router.get(
 router.get("/getmemberregistartionbyid/:id", vehicleController.getVehicleById);
 router.put(
   "/updatememberregistartion/:id",
+  auth,
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "billBookPhoto", maxCount: 1 },
+    { name: "licensePaper", maxCount: 1 },
+    { name: "insurancePaper", maxCount: 1 },
+    { name: "routePermit", maxCount: 1 },
+    { name: "jachPass", maxCount: 1 },
+    { name: "operatorPhoto", maxCount: 1 },
+    { name: "helperPhoto", maxCount: 1 },
+    { name: "driverPhoto[0]", maxCount: 5 },
+    { name: "driverPhoto[1]", maxCount: 5 },
+  ]),
   vechileRegistrationValidation.vechileRegistrationValidation,
   vehicleController.updateVehicle
 );

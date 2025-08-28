@@ -54,4 +54,14 @@ BillingTitleInfo.belongsTo(BranchInfo, {
   as: "branch",
 });
 
+// Associate with VehicleSubscription
+BillingTitleInfo.associate = (models) => {
+  if (models.VehicleSubscription) {
+    BillingTitleInfo.hasMany(models.VehicleSubscription, {
+      foreignKey: "billing_title_id",
+      as: "subscriptions"
+    });
+  }
+};
+
 module.exports = BillingTitleInfo;

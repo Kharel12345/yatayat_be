@@ -8,6 +8,8 @@ const errorHandler = require("./utils/errorHandler");
 const { authRoutes, branchRoute } = require("./routes");
 const { ledgerRoutes } = require("./routes/Accounting");
 const { reportRoues } = require('./routes/Report');
+// const SubscriptionTasks = require("./tasks/subscription_tasks");
+
 const {
   economicYearRoute,
   smsSettingInfoRoute,
@@ -43,6 +45,8 @@ app.use(express.json());
 // Load database configuration and models
 require("./config/database");
 require("../models"); // Load Sequelize models
+// Initialize scheduled tasks
+// SubscriptionTasks.initializeTasks();
 
 //routes here
 app.use("/api/auth", authRoutes);
@@ -66,3 +70,4 @@ app.use((req, res, next) => {
 });
 
 module.exports = app;
+

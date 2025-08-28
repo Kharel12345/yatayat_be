@@ -1,6 +1,7 @@
 // validations/vehicle.validation.js
 const Joi = require("joi");
 const fs = require("fs");
+const { cleanupUploadedFiles } = require("../../../utils/fileCleanup");
 
 const driverSchema = Joi.object({
   driverName: Joi.string().required(),
@@ -37,6 +38,8 @@ const vehicleSchema = Joi.object({
   billBookPhoto: Joi.string().allow(""),
   licensePaper: Joi.string().allow(""),
   insurancePaper: Joi.string().allow(""),
+  routePermit: Joi.string().allow(""),
+  jachPass: Joi.string().allow(""),
   registrationDate: Joi.date().required(),
   categoryId: Joi.number().required(),
   subCategoryId: Joi.number().required(),
@@ -68,14 +71,15 @@ const vechileRegistrationValidation = (req, res, next) => {
     const { error } = vehicleSchema.validate(req.body, { abortEarly: false });
 
     if (error) {
-      if (req.file && req.file.path) {
-        fs.unlinkSync(req.file.path); // remove uploaded file if validation fails
-      }
+      // Clean up all uploaded files if validation fails
+      cleanupUploadedFiles(req.files, req.file);
       return next(error);
     }
 
     next();
   } catch (err) {
+    // Clean up uploaded files if any error occurs
+    cleanupUploadedFiles(req.files, req.file);
     next(err);
   }
 };

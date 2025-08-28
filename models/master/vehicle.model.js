@@ -13,6 +13,8 @@ const Vehicle = sequelize.define(
     billbookphoto: { type: DataTypes.STRING, allowNull: true },
     licensePaper: { type: DataTypes.STRING, allowNull: true },
     insurancePaper: { type: DataTypes.STRING, allowNull: true },
+    routePermit: { type: DataTypes.STRING, allowNull: true },
+    jachPass: { type: DataTypes.STRING, allowNull: true },
     registrationDate: { type: DataTypes.DATE, allowNull: false },
     categoryId: { type: DataTypes.INTEGER, allowNull: true },
     subCategoryId: { type: DataTypes.INTEGER, allowNull: true },
@@ -33,6 +35,21 @@ Vehicle.associate = (models) => {
   Vehicle.hasOne(models.Operator, { foreignKey: "vehicleId", as: "operator" });
   Vehicle.hasOne(models.Helper, { foreignKey: "vehicleId", as: "helper" });
   Vehicle.hasMany(models.Driver, { foreignKey: "vehicleId", as: "drivers" });
+  
+  // Billing associations
+  if (models.VehicleSubscription) {
+    Vehicle.hasMany(models.VehicleSubscription, { 
+      foreignKey: "vehicle_id", 
+      as: "subscriptions" 
+    });
+  }
+  
+  if (models.SubscriptionPayment) {
+    Vehicle.hasMany(models.SubscriptionPayment, { 
+      foreignKey: "vehicle_id", 
+      as: "payments" 
+    });
+  }
 };
 
 module.exports = Vehicle;
