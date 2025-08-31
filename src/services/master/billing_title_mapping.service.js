@@ -49,10 +49,22 @@ const deleteBillingMapping = async (id) => {
   return true;
 };
 
+const getBillingMappedByBillingTitle = async (billing_title_id) => {
+  return await BillingTitleMappingInfo.findOne({
+    where: { billing_title_id, status: 1 },
+    attributes: ['id'],
+    include: [
+      { model: LabelInfo, as: 'labelInfo', }
+    ]
+
+  });;
+};
+
 module.exports = {
   createBillingMapping,
   updateBillingMapping,
   deleteBillingMapping,
   findOneBillingMapping,
   findAllBillingMapping,
+  getBillingMappedByBillingTitle
 };

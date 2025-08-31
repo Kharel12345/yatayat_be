@@ -1,11 +1,5 @@
-const {
-  Invoice,
-  Vehicle,
-  BillingTitle,
-  BillingMapping,
-  sequelize,
-} = require("../../../models");
-const { Sequelize, Op } = require("sequelize");
+
+const { Op } = require("sequelize");
 const moment = require("moment");
 const {
   NotFoundError,
@@ -14,6 +8,9 @@ const {
 } = require("../../utils/error");
 const Nepali_Calendar = require("../../helpers/nepaliCalendar");
 const e = require("express");
+const { Vehicle, BillingTitleInfo, BillingTitleMappingInfo } = require("../../../models/master");
+const Invoice = require("../../../models/accounting/invoice.model");
+const sequelize = require("../../config/database");
 
 const createInvoice = async (invoiceData) => {
   const transaction = await sequelize.transaction();
@@ -34,7 +31,7 @@ const createInvoice = async (invoiceData) => {
 
     // Get vehicle and billing title details
     const vehicle = await Vehicle.findByPk(vehicle_id, { transaction });
-    const billingTitle = await BillingTitle.findByPk(billing_title_id, {
+    const billingTitle = await BillingTitleInfo.findByPk(billing_title_id, {
       transaction,
     });
 
@@ -51,7 +48,7 @@ const createInvoice = async (invoiceData) => {
     }
 
     // Check if billing title matches vehicle subscription type
-    const billingMappings = await BillingMapping.findAll({
+    const billingMappings = await BillingTitleMappingInfo.findAll({
       where: { billing_title_id },
       transaction,
     });
@@ -222,7 +219,7 @@ const getInvoicesByVehicle = async (vehicleId, filters = {}) => {
       where: { vehicle_id: vehicleId },
       include: [
         {
-          model: BillingTitle,
+          model: BillingTitleInfo,
           attributes: ["id", "billing_title", "rate"],
         },
       ],
@@ -266,7 +263,7 @@ const getRenewalReminders = async (days = 7) => {
           attributes: ["id", "name", "subscription_type"],
         },
         {
-          model: BillingTitle,
+          model: BillingTitleInfo,
           attributes: ["id", "billing_title", "rate"],
         },
       ],
@@ -320,6 +317,21 @@ const getDashboardStats = async () => {
   }
 };
 
+const getVehicleExpiryDate = async (data) => {
+  try {
+    const result = await Invoice.findOne({
+      where: {
+        // vehicle_id: data.vehicle_id,
+        billing_title_id: data.billing_title_id,
+      },
+      order: [["created_at", "DESC"]],
+    });
+    return result?.dataValues || null;
+  } catch (error) {
+    throw new DatabaseError("Error fetching vehicle expiry date", error);
+  }
+};
+
 module.exports = {
   createInvoice,
   getInvoices,
@@ -328,4 +340,5 @@ module.exports = {
   getInvoicesByVehicle,
   getRenewalReminders,
   getDashboardStats,
+  getVehicleExpiryDate
 };

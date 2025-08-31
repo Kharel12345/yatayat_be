@@ -10,5 +10,7 @@ router.get("/fetch-renewal-reminders", invoiceControllers.getRenewalReminders);
 router.get("/fetchvehiclebyinvoice/:vehicleId", invoiceControllers.getInvoicesByVehicle);
 router.get("/getinvoicebyid:id", invoiceControllers.getInvoiceById);
 router.put("/updateinvoice:id", invoiceControllers.updateInvoice);
+router.get('/getreceiptno', invoiceControllers.getReceiptNo);
+router.get('/getvehicleexpirydate', invoiceControllers.getVehicleExpiryDate);
 
 module.exports = router;

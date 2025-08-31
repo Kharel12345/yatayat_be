@@ -10,6 +10,7 @@ const {
     CAPTCHA_SECRET_KEY,
     CAPTCHA,
     COOKIE_EXPIRY,
+    ORGANIZATION_NAME_PREFIX
 } = process.env
 
 module.exports = {
@@ -21,5 +22,6 @@ module.exports = {
     REFRESH_EXPIRY,
     CAPTCHA_SECRET_KEY,
     CAPTCHA,
-    COOKIE_EXPIRY
+    COOKIE_EXPIRY,
+    ORGANIZATION_NAME_PREFIX
 }
