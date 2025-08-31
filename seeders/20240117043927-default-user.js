@@ -26,7 +26,9 @@ module.exports = {
       created_by: null,
       createdAt: new Date(),
       updatedAt: new Date()
-    }], {});
+      }], {
+        ignoreDuplicates: true
+      });
   },
 
   async down(queryInterface, Sequelize) {

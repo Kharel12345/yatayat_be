@@ -24,7 +24,9 @@ module.exports = {
       { id: 19, label: 'Sales Commission A/C', ledger_id: 0 },
       { id: 20, label: 'Damage Goods A/C', ledger_id: 0 },
       { id: 21, label: 'Vat Payable', ledger_id: 0 }
-    ]);
+    ], {
+      ignoreDuplicates: true
+    });
   },
 
   down: async (queryInterface, Sequelize) => {

@@ -11,7 +11,9 @@ module.exports = {
       { sub_group_name: 'Non- operating income', is_editable: 0, status: 1, created_at: new Date() },
       { sub_group_name: 'Preliminary expenses', is_editable: 0, status: 1, created_at: new Date() },
       { sub_group_name: 'Interest Paid', is_editable: 0, status: 1, created_at: new Date() }
-    ]);
+    ], {
+      ignoreDuplicates: true
+    });
   },
 
   down: async (queryInterface, Sequelize) => {

@@ -37,7 +37,9 @@ module.exports = {
       { ledger_group_name: 'Bonus Share', formula: 'debit-credit', is_editable: 0, status: 1, created_at: new Date() },
       { ledger_group_name: 'Short Term Loan', formula: 'credit-debit', is_editable: 0, status: 1, created_at: new Date() },
       { ledger_group_name: 'Share Capital', formula: 'credit-debit', is_editable: 0, status: 1, created_at: new Date() }
-    ]);
+    ], {
+      ignoreDuplicates: true
+    });
   },
 
   down: async (queryInterface, Sequelize) => {

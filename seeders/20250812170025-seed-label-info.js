@@ -6,7 +6,9 @@ module.exports = {
       { label_name: 'monthly', status: 1 },
       { label_name: 'yearly', status: 1 },
       { label_name: 'both', status: 1 },
-    ], {});
+    ], {
+      ignoreDuplicates: true
+    });
   },
 
   async down(queryInterface, Sequelize) {
