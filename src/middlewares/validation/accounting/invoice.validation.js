@@ -11,14 +11,20 @@ const createInvoiceSchema = Joi.object({
     "number.positive": "Vehicle ID must be a positive number",
     "any.required": "Vehicle ID is required",
   }),
+    amount: Joi.number().integer().positive().required().messages({
+    "number.base": "Billing Title ID must be a number",
+    "number.integer": "Billing Title ID must be an integer",
+    "number.positive": "Billing Title ID must be a positive number",
+    "any.required": "Billing Title ID is required",
+  }),
   billing_title_id: Joi.number().integer().positive().required().messages({
     "number.base": "Billing Title ID must be a number",
     "number.integer": "Billing Title ID must be an integer",
     "number.positive": "Billing Title ID must be a positive number",
     "any.required": "Billing Title ID is required",
   }),
-  payment_mode: Joi.string()
-    .valid("cash", "credit", "bank_transfer", "online", "cheque")
+  payment_method: Joi.string()
+    .valid("Cash", "credit", "bank_transfer", "online", "cheque")
     .optional()
     .messages({
       "string.base": "Payment mode must be a string",
@@ -29,10 +35,10 @@ const createInvoiceSchema = Joi.object({
     "string.base": "Remarks must be a string",
     "string.max": "Remarks cannot exceed 500 characters",
   }),
-  invoice_date_bs: Joi.date().optional().messages({
+  bill_date_bs: Joi.string().optional().messages({
     "date.base": "Invoice date must be a valid date",
   }),
-  expire_date_bs: Joi.date().optional().messages({
+  expiry_date_bs: Joi.string().optional().messages({
     "date.base": "Invoice date must be a valid date",
   }),
 });

@@ -19,18 +19,20 @@ const createInvoice = async (invoiceData) => {
     const {
       vehicle_id,
       billing_title_id,
-      payment_mode,
+      payment_method,
       remarks,
-      invoice_date_bs,
+      bill_date_bs,
       receipt_no,
-      expire_date_bs,
+      expiry_date_bs,
     } = invoiceData;
+    
     const nepaliCalendar = new Nepali_Calendar();
-    const invoice_date = nepaliCalendar.bsToAd(invoice_date_bs);
-    const expire_date = nepaliCalendar.bsToAd(expire_date_bs);
+    const invoice_date = nepaliCalendar.BSToADConvert(bill_date_bs);
+    const expire_date = nepaliCalendar.BSToADConvert(expiry_date_bs);
 
     // Get vehicle and billing title details
     const vehicle = await Vehicle.findByPk(vehicle_id, { transaction });
+    
     const billingTitle = await BillingTitleInfo.findByPk(billing_title_id, {
       transaction,
     });
@@ -43,7 +45,7 @@ const createInvoice = async (invoiceData) => {
       throw new NotFoundError("Billing title not found");
     }
 
-    if (billingTitle.status !== "active") {
+    if (billingTitle.status !== 1) {
       throw new ValidationError("Billing title is not active");
     }
 
@@ -53,37 +55,37 @@ const createInvoice = async (invoiceData) => {
       transaction,
     });
 
-    const mappingTypes = billingMappings.map((m) => m.mapping_type);
+    // const mappingTypes = billingMappings.map((m) => m.mapping_type);
 
-    if (
-      !mappingTypes.includes(vehicle.subscription_type) &&
-      vehicle.subscription_type !== "both"
-    ) {
-      throw new ValidationError(
-        `Billing title not compatible with vehicle's subscription type`
-      );
-    }
+    // if (
+    //   !mappingTypes.includes(vehicle.subscriptionType) &&
+    //   vehicle.subscription_type !== "both"
+    // ) {
+    //   throw new ValidationError(
+    //     `Billing title not compatible with vehicle's subscription type`
+    //   );
+    // }
 
-    // Calculate expiry date based on billing type
-    let expiryDate = moment(invoice_date || new Date());
-    if (mappingTypes.includes("yearly")) {
-      expiryDate = expiryDate.add(1, "year");
-    } else {
-      expiryDate = expiryDate.add(1, "month");
-    }
+    // // Calculate expiry date based on billing type
+    // let expiryDate = moment(invoice_date || new Date());
+    // if (mappingTypes.includes("yearly")) {
+    //   expiryDate = expiryDate.add(1, "year");
+    // } else {
+    //   expiryDate = expiryDate.add(1, "month");
+    // }
 
     // Create invoice
     const invoice = await Invoice.create(
-      {
+      {invoice_number:7,
         vehicle_id,
         billing_title_id,
         rate: billingTitle.rate,
-        expiry_date: expiryDate.toDate(),
-        payment_mode,
+        expiry_date: expire_date,
+        payment_mode:payment_method.toLowerCase(),
         remarks,
         invoice_date: invoice_date || new Date(),
-        invoice_date_bs,
-        expire_date_bs,
+        invoice_date_bs:bill_date_bs,
+        expire_date_bs:expiry_date_bs,
         receipt_no,
       },
       { transaction }
@@ -93,6 +95,8 @@ const createInvoice = async (invoiceData) => {
 
     // Get full invoice details with associations
     const fullInvoice = await this.getInvoiceById(invoice.id);
+    // console.log(fullInvoice);
+    
     return fullInvoice;
   } catch (error) {
     await transaction.rollback();
@@ -143,6 +147,8 @@ const getInvoices = async (filters = {}) => {
 
 // Get invoice by ID
 const getInvoiceById = async (id) => {
+  console.log(id);
+  
   try {
     const invoice = await Invoice.findByPk(id, {
       include: [
@@ -151,8 +157,8 @@ const getInvoiceById = async (id) => {
           attributes: ["id", "name", "subscription_type"],
         },
         {
-          model: BillingTitle,
-          attributes: ["id", "billing_title", "rate"],
+          model: billing_title_info,
+          attributes: ["billing_title_id", "billing_title", "rate"],
         },
       ],
     });

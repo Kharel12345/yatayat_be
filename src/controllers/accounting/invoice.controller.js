@@ -15,13 +15,15 @@ const Nepali_Calendar = require('../../helpers/nepaliCalendar');
 // Create a new invoice
 const createInvoice = async (req, res, next) => {
   try {
+
 // Validate request body
-    const { value } = createInvoiceSchema.validate(req.body);
+    const { error } = createInvoiceSchema.validate(req.body);
+
     if (error) {
       throw new ValidationError(error.details[0].message);
     }
 
-    const invoice = await invoiceServices.createInvoice(value);
+    const invoice = await invoiceServices.createInvoice(req.body);
 
     res.status(201).json({
       success: true,
@@ -172,6 +174,7 @@ const getReceiptNo = async (req, res, next) => {
   try {
 
     let result = await IndexInfo.getReceiptNo(req.query.economic_year_id);
+
     let max_id = result.max_id;
     let index_code = result.index_code;
     let receipt_no =
