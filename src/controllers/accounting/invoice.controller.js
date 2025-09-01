@@ -3,7 +3,8 @@ const {
   createInvoiceSchema,
   updateInvoiceSchema,
   getInvoicesSchema,
-  getRenewalRemindersSchema
+  getRenewalRemindersSchema,
+  validateUpdatePaymentStatus
 } = require('../../middlewares/validation/accounting/invoice.validation');
 const { invoiceServices } = require('../../services/accounting');
 const { IndexInfo, billingTitleMappingService } = require('../../services/master');
@@ -44,13 +45,13 @@ const getAllInvoices = async (req, res, next) => {
       throw new ValidationError(error.details[0].message);
     }
 
-    const result = await invoiceServices.getInvoices(value);
+    const { invoices, count } = await invoiceServices.getInvoices(req.query);
 
-    res.json({
+    return res.status(200).json({
       success: true,
       message: 'Invoices fetched successfully',
-      data: result.invoices,
-      pagination: result.pagination
+      data: invoices,
+      total: count
     });
   } catch (error) {
     next(error);
@@ -66,7 +67,7 @@ const getInvoiceById = async (req, res, next) => {
       throw new ValidationError('Valid invoice ID is required');
     }
 
-    const invoice = await invoiceService.getInvoiceById(parseInt(id));
+    const invoice = await invoiceServices.getInvoiceById(id);
 
     res.json({
       success: true,
@@ -95,7 +96,7 @@ const updateInvoice = async (req, res, next) => {
 
     const invoice = await invoiceServices.updateInvoice(parseInt(id), value);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Invoice updated successfully',
       data: invoice
@@ -237,6 +238,25 @@ const getVehicleExpiryDate = async (req, res, next) => {
   }
 };
 
+const updatePaymentStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { error } = validateUpdatePaymentStatus.validate(req.body);
+    if (error) {
+      throw new ValidationError(error.details[0].message);
+    }
+
+    const result = await invoiceServices.updatePaymentStatus(id, req.body);
+    return res.status(200).json({
+      success: true,
+      message: 'Payment status updated successfully',
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   createInvoice,
@@ -247,5 +267,6 @@ module.exports = {
   getRenewalReminders,
   getDashboardStats,
   getReceiptNo,
-  getVehicleExpiryDate
+  getVehicleExpiryDate,
+  updatePaymentStatus
 };

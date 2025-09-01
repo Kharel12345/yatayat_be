@@ -396,10 +396,10 @@ const deleteVehicle = async (id) => {
 };
 
 const getVechilesForDropdown = async () => {
-  const ledgers = await LedgerInfo.findAll({
+  const ledgers = await Vehicle.findAll({
     where: {
       status: 1,
-      ledger_type: "Transportation",
+      // ledger_type: "Transportation",
     },
     order: [["id", "DESC"]],
   });

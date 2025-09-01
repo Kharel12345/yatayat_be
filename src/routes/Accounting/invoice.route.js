@@ -8,9 +8,10 @@ router.get("/getallinvoice", invoiceControllers.getAllInvoices);
 router.get("/getinvoicedashboard/stats", invoiceControllers.getDashboardStats);
 router.get("/fetch-renewal-reminders", invoiceControllers.getRenewalReminders);
 router.get("/fetchvehiclebyinvoice/:vehicleId", invoiceControllers.getInvoicesByVehicle);
-router.get("/getinvoicebyid:id", invoiceControllers.getInvoiceById);
+router.get("/getinvoicebyid/:id", invoiceControllers.getInvoiceById);
 router.put("/updateinvoice:id", invoiceControllers.updateInvoice);
 router.get('/getreceiptno', invoiceControllers.getReceiptNo);
 router.get('/getvehicleexpirydate', invoiceControllers.getVehicleExpiryDate);
+router.put('/updatepaymentstatus/:id', invoiceControllers.updatePaymentStatus);
 
 module.exports = router;

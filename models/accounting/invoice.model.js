@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
+const { Vehicle, BillingTitleInfo } = require("../master");
 
 const Invoice = sequelize.define(
   "Invoice",
@@ -162,5 +163,18 @@ const Invoice = sequelize.define(
     },
   }
 );
+
+Invoice.belongsTo(Vehicle, {
+  foreignKey: "vehicle_id",
+  targetKey: "id",
+  as: "vehicleInfo",
+});
+
+Invoice.belongsTo(BillingTitleInfo, {
+  foreignKey: "billing_title_id",
+  targetKey: "billing_title_id",
+  as: "billingInfo",
+});
+
 
 module.exports = Invoice;

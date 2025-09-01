@@ -24,62 +24,32 @@ const createInvoice = async (invoiceData) => {
       bill_date_bs,
       receipt_no,
       expiry_date_bs,
+      amount,
+      status
     } = invoiceData;
     
     const nepaliCalendar = new Nepali_Calendar();
     const invoice_date = nepaliCalendar.BSToADConvert(bill_date_bs);
     const expire_date = nepaliCalendar.BSToADConvert(expiry_date_bs);
 
-    // Get vehicle and billing title details
-    const vehicle = await Vehicle.findByPk(vehicle_id, { transaction });
-    
-    const billingTitle = await BillingTitleInfo.findByPk(billing_title_id, {
-      transaction,
-    });
-
+    // Check if vehicle exists
+    const vehicle = await Vehicle.findByPk(vehicle_id, { status: 1 });
     if (!vehicle) {
       throw new NotFoundError("Vehicle not found");
     }
-
+    // Check if billing title exists
+    const billingTitle = await BillingTitleInfo.findByPk(billing_title_id, { status: 1 });
     if (!billingTitle) {
       throw new NotFoundError("Billing title not found");
     }
 
-    if (billingTitle.status !== 1) {
-      throw new ValidationError("Billing title is not active");
-    }
-
-    // Check if billing title matches vehicle subscription type
-    const billingMappings = await BillingTitleMappingInfo.findAll({
-      where: { billing_title_id },
-      transaction,
-    });
-
-    // const mappingTypes = billingMappings.map((m) => m.mapping_type);
-
-    // if (
-    //   !mappingTypes.includes(vehicle.subscriptionType) &&
-    //   vehicle.subscription_type !== "both"
-    // ) {
-    //   throw new ValidationError(
-    //     `Billing title not compatible with vehicle's subscription type`
-    //   );
-    // }
-
-    // // Calculate expiry date based on billing type
-    // let expiryDate = moment(invoice_date || new Date());
-    // if (mappingTypes.includes("yearly")) {
-    //   expiryDate = expiryDate.add(1, "year");
-    // } else {
-    //   expiryDate = expiryDate.add(1, "month");
-    // }
-
     // Create invoice
     const invoice = await Invoice.create(
-      {invoice_number:7,
+      {
+        invoice_number: `INV-${Date.now()}`,
         vehicle_id,
         billing_title_id,
-        rate: billingTitle.rate,
+        rate: amount,
         expiry_date: expire_date,
         payment_mode:payment_method.toLowerCase(),
         remarks,
@@ -87,17 +57,14 @@ const createInvoice = async (invoiceData) => {
         invoice_date_bs:bill_date_bs,
         expire_date_bs:expiry_date_bs,
         receipt_no,
+        total_amount: amount,
+        status: status || "pending",
+
       },
       { transaction }
     );
-
     await transaction.commit();
-
-    // Get full invoice details with associations
-    const fullInvoice = await this.getInvoiceById(invoice.id);
-    // console.log(fullInvoice);
-    
-    return fullInvoice;
+    return invoice;
   } catch (error) {
     await transaction.rollback();
     throw error;
@@ -119,11 +86,11 @@ const getInvoices = async (filters = {}) => {
       include: [
         {
           model: Vehicle,
-          attributes: ["id", "name", "subscription_type"],
+          as: "vehicleInfo",
         },
         {
-          model: BillingTitle,
-          attributes: ["id", "billing_title", "rate"],
+          model: BillingTitleInfo,
+          as: "billingInfo",
         },
       ],
       order: [["invoice_date", "DESC"]],
@@ -133,32 +100,25 @@ const getInvoices = async (filters = {}) => {
 
     return {
       invoices,
-      pagination: {
-        total: count,
-        pages: Math.ceil(count / limit),
-        page: parseInt(page),
-        limit: parseInt(limit),
-      },
+      count,
     };
   } catch (error) {
     throw new DatabaseError("Error fetching invoices", error);
   }
 };
 
-// Get invoice by ID
+
 const getInvoiceById = async (id) => {
-  console.log(id);
-  
   try {
     const invoice = await Invoice.findByPk(id, {
       include: [
         {
           model: Vehicle,
-          attributes: ["id", "name", "subscription_type"],
+          as: "vehicleInfo",
         },
         {
-          model: billing_title_info,
-          attributes: ["billing_title_id", "billing_title", "rate"],
+          model: BillingTitleInfo,
+          as: "billingInfo",
         },
       ],
     });
@@ -338,6 +298,21 @@ const getVehicleExpiryDate = async (data) => {
   }
 };
 
+const updatePaymentStatus = async (id, status) => {
+  try {
+    const invoice = await Invoice.findByPk(id);
+    if (!invoice) {
+      throw new NotFoundError("Invoice not found");
+    }
+    invoice.status = status.status;
+    await invoice.save();
+    return invoice;
+  } catch (error) {
+    if (error instanceof NotFoundError) throw error;
+    throw new DatabaseError("Error updating payment status", error);
+  }
+};
+
 module.exports = {
   createInvoice,
   getInvoices,
@@ -346,5 +321,6 @@ module.exports = {
   getInvoicesByVehicle,
   getRenewalReminders,
   getDashboardStats,
-  getVehicleExpiryDate
+  getVehicleExpiryDate,
+  updatePaymentStatus
 };

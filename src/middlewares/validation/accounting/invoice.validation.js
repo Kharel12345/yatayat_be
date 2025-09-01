@@ -24,7 +24,7 @@ const createInvoiceSchema = Joi.object({
     "any.required": "Billing Title ID is required",
   }),
   payment_method: Joi.string()
-    .valid("Cash", "credit", "bank_transfer", "online", "cheque")
+    .valid("cash", "credit", "bank_transfer", "online", "cheque")
     .optional()
     .messages({
       "string.base": "Payment mode must be a string",
@@ -41,6 +41,22 @@ const createInvoiceSchema = Joi.object({
   expiry_date_bs: Joi.string().optional().messages({
     "date.base": "Invoice date must be a valid date",
   }),
+  status: Joi.string()
+    .valid("pending", "paid", "overdue", "cancelled")
+    .optional()
+    .messages({
+      "string.base": "Status must be a string",
+      "any.only": "Status must be one of: pending, paid, overdue, cancelled",
+    }),
+  bank_id: Joi.number().integer().positive().optional().messages({
+    "number.base": "Bank ID must be a number",
+    "number.integer": "Bank ID must be an integer",
+    "number.positive": "Bank ID must be a positive number",
+  }),
+  qrRemarks: Joi.string().max(500).optional().messages({
+    "string.base": "Remarks must be a string",
+    "string.max": "Remarks cannot exceed 500 characters",
+  })
 });
 
 const updateInvoiceSchema = Joi.object({
@@ -115,9 +131,20 @@ const getRenewalRemindersSchema = Joi.object({
     }),
 });
 
+const validateUpdatePaymentStatus = Joi.object({
+  status: Joi.string()
+    .valid("pending", "paid", "overdue", "cancelled")
+    .optional()
+    .messages({
+      "string.base": "Status must be a string",
+      "any.only": "Status must be one of: pending, paid, overdue, cancelled",
+    }),
+});
+
 module.exports = {
   createInvoiceSchema,
   updateInvoiceSchema,
   getInvoicesSchema,
   getRenewalRemindersSchema,
+  validateUpdatePaymentStatus
 };
