@@ -3,6 +3,7 @@ const { DataTypes, Sequelize } = require('sequelize');
 const sequelize = require('../src/config/database');
 const UserPermissionInfo = require('./userpermission.model');
 const BranchInfo = require('./branch.model');
+const UserBranchInfo = require('./userbranch.model');
 
 const User = sequelize.define('User', {
     user_id: {
@@ -67,5 +68,10 @@ User.belongsTo(UserPermissionInfo, {
   as: "permissionInfo",
 });
 
+User.belongsTo(UserBranchInfo, {
+  foreignKey: "user_id",
+  targetKey: "user_id",
+  as: "branchInfo",
+})
 
 module.exports = User;

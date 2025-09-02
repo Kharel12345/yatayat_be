@@ -6,7 +6,7 @@ const cors = require("cors");
 const logger = require("./config/winstonLoggerConfig");
 const errorHandler = require("./utils/errorHandler");
 const { authRoutes, branchRoute } = require("./routes");
-const { ledgerRoutes, invoiceRoutes } = require("./routes/Accounting");
+const { ledgerRoutes, invoiceRoutes, cashInvoiceRoutes } = require("./routes/Accounting");
 const { reportRoues } = require('./routes/Report');
 // const SubscriptionTasks = require("./tasks/subscription_tasks");
 
@@ -62,6 +62,7 @@ app.use("/api/master", BillingTitleMappingInfoRoutes);
 app.use("/api/master", userRoutes);
 app.use("/api/master", uploadRoute);
 app.use("/api/billing", invoiceRoutes);
+app.use("/api/cashinvoice", cashInvoiceRoutes);
 
 app.use(errorHandler);
 

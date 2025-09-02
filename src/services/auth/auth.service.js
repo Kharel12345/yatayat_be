@@ -14,6 +14,7 @@ const axios = require("axios");
 const RefreshToken = require("../../../models/refreshToken.model");
 const { Op } = require("sequelize");
 const UserPermissionInfo = require("../../../models/userpermission.model");
+const UserBranchInfo = require("../../../models/userbranch.model");
 
 const findUser = async (username) => {
   return await User.findOne({ where: { username } });
@@ -24,7 +25,7 @@ const findUserById = async (user_id) => {
 };
 
 const validatePassword = async (password, user) => {
-  return await bcrypt.compare(password, user.password);
+  return await bcrypt.compare(password, user?.password);
 };
 
 const createRefreshToken = async (userId, refresh_token) => {
@@ -99,6 +100,10 @@ const getUserDetailsById = async (user_id) => {
       {
         model: UserPermissionInfo,
         as: "permissionInfo",
+      },
+      {
+        model: UserBranchInfo,
+        as: "branchInfo",
       },
     ],
 
