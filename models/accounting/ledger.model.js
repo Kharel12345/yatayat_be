@@ -93,4 +93,9 @@ LedgerInfo.belongsTo(AccountingLedgerSubGroup, {
 });
 
 
+AccountingLedgerGroup.hasMany(LedgerInfo, {
+  foreignKey: 'master_ledger_group_id',
+  as: 'ledgers'
+});
+
 module.exports = LedgerInfo;

@@ -218,23 +218,61 @@ const getledgerGroup = async (name) => {
   }
 };
 
+// const getActiveLedger = async () => {
+//   try {
+//     let result = await AccountingLedgerMapping.getActiveLedger();
+//     return result;
+//   } catch (error) {
+//     throw new Error(error);
+//   }
+// };
+
+// const getAssociatedLedgerId = async (groupname) => {
+//   try {
+//     let result = await AccountingLedgerMapping.getLedgerInfo(groupname);
+//     return result;
+//   } catch (error) {
+//     throw new Error(error);
+//   }
+// };
+
 const getActiveLedger = async () => {
   try {
-    let result = await AccountingLedgerInfo.getActiveLedger();
+    const result = await AccountingLedgerMapping.findAll({
+      where: { status: 1 },   // Assuming 'status' column indicates active/inactive
+      attributes: ['id', 'ledger_name', 'group_name'], // Select only needed fields
+      order: [['ledger_name', 'ASC']] // Optional ordering
+    });
     return result;
   } catch (error) {
-    throw new Error(error);
+    console.error('Error fetching active ledgers:', error);
+    throw new Error('Failed to fetch active ledgers');
   }
 };
 
-const getAssociatedLedgerId = async (groupname) => {
+// Get a ledger by group name
+const getAssociatedLedgerId = async (groupName) => {
   try {
-    let result = await AccountingLedgerInfo.getLedgerInfo(groupname);
+    const result = await AccountingLedgerMapping.findOne({
+      attributes: ['ledger_id', 'label'],
+      where: { label: groupName },
+      include: [
+        {
+          model: LedgerInfo,
+          as: 'ledgerInfo',
+          attributes: ['id'],
+          where: { status: 1 },
+          required: false, // allows groups even if no active ledgers
+        },
+      ],
+    });
+
     return result;
   } catch (error) {
-    throw new Error(error);
+    throw new Error(`Error fetching ledger info: ${error.message}`);
   }
 };
+
 
 const getMappedLedgerIdByLabel = async (ledgerName) => {
   try {

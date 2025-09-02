@@ -1,11 +1,11 @@
-const { economicYearServices } = require("../services/master");
+const { economicYearServices, IndexInfo } = require("../services/master");
 
 
 const getReceiptNo = async (functional_year_id) => {
   try {
     let result = await IndexInfo.getReceiptNo(functional_year_id);
-    let max_id = result[0].max_id;
-    let index_code = result[0].index_code;
+    let max_id = result.max_id;
+    let index_code = result.index_code;
     let economicYearDetail = await economicYearServices.getEconomicYearInfo(
       functional_year_id
     );
@@ -31,7 +31,7 @@ const getReceiptNo = async (functional_year_id) => {
 const getTransactionId = async (functional_year_id) => {
   try {
     let result = await IndexInfo.getTransactionId(functional_year_id);
-    let max_id = result[0].max_id;
+    let max_id = result.max_id;
     return parseInt(max_id) + 1;
   } catch (error) {
     throw new Error(error);

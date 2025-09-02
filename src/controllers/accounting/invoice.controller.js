@@ -1,35 +1,87 @@
-const { ORGANIZATION_NAME_PREFIX } = require('../../config/constant');
+const { ORGANIZATION_NAME_PREFIX } = require("../../config/constant");
 const {
   createInvoiceSchema,
   updateInvoiceSchema,
   getInvoicesSchema,
   getRenewalRemindersSchema,
-  validateUpdatePaymentStatus
-} = require('../../middlewares/validation/accounting/invoice.validation');
-const { invoiceServices } = require('../../services/accounting');
-const { IndexInfo, billingTitleMappingService } = require('../../services/master');
-const { ValidationError } = require('../../utils/error');
+  validateUpdatePaymentStatus,
+} = require("../../middlewares/validation/accounting/invoice.validation");
+const {
+  invoiceServices,
+  ledgerServices,
+} = require("../../services/accounting");
+const {
+  IndexInfo,
+  billingTitleMappingService,
+} = require("../../services/master");
+const { ValidationError } = require("../../utils/error");
 
-const Nepali_Calendar = require('../../helpers/nepaliCalendar');
-
+const Nepali_Calendar = require("../../helpers/nepaliCalendar");
+const { getTransactionId } = require("../../utils/index_info");
 
 // Create a new invoice
 const createInvoice = async (req, res, next) => {
   try {
 
-// Validate request body
+    // Validate request body
     const { error } = createInvoiceSchema.validate(req.body);
 
     if (error) {
       throw new ValidationError(error.details[0].message);
     }
+    const functional_year_id = 1;
 
+    const transaction_id = await getTransactionId(functional_year_id);
+    if (transaction_id == null) {
+      return res.status(500).json({ error: "Failed to fetch transaction ID" });
+    }
+
+    //get ledger_id for pharmacy_sales_payment_info
+    let cashLedgerData = await ledgerServices.getAssociatedLedgerId(
+      "Cash in Hand"
+    );
+
+    const cash_ledger_id = cashLedgerData.ledger_id;
+
+    if (cash_ledger_id == null) {
+      return res.status(409).json({
+        status: false,
+        message:
+          "Ledger mapping not done of ledger group Cash in Hand. Please do ledger mapping first.",
+      });
+    }
+
+    let renewMappingData = await ledgerServices.getAssociatedLedgerId("Sales Ledger");
+
+    const sales_ledger_id = renewMappingData.ledger_id;
+    if (sales_ledger_id == null) {
+      return res.status(409).json({
+        status: false,
+        message:
+          "Ledger mapping not done of ledger group Sales Ledger. Please do ledger mapping first.",
+      });
+    }
+
+    const bank_id = 1;
+
+    const branch_id = 1;
+    const created_by = 1;
+    req.body = {
+      ...req.body,
+      transaction_id,
+      cash_ledger_id,
+      sales_ledger_id,
+      bank_id,
+      branch_id,
+      functional_year_id,
+      created_by,
+    };
     const invoice = await invoiceServices.createInvoice(req.body);
 
     res.status(201).json({
       success: true,
-      message: 'Invoice created successfully',
-      data: invoice
+      message: "Invoice created successfully",
+      data: invoice,
     });
   } catch (error) {
     next(error);
@@ -49,9 +101,9 @@ const getAllInvoices = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Invoices fetched successfully',
+      message: "Invoices fetched successfully",
       data: invoices,
-      total: count
+      total: count,
     });
   } catch (error) {
     next(error);
@@ -64,15 +116,15 @@ const getInvoiceById = async (req, res, next) => {
     const { id } = req.params;
 
     if (!id || isNaN(parseInt(id))) {
-      throw new ValidationError('Valid invoice ID is required');
+      throw new ValidationError("Valid invoice ID is required");
     }
 
     const invoice = await invoiceServices.getInvoiceById(id);
 
     res.json({
       success: true,
-      message: 'Invoice fetched successfully',
-      data: invoice
+      message: "Invoice fetched successfully",
+      data: invoice,
     });
   } catch (error) {
     next(error);
@@ -85,7 +137,7 @@ const updateInvoice = async (req, res, next) => {
     const { id } = req.params;
 
     if (!id || isNaN(parseInt(id))) {
-      throw new ValidationError('Valid invoice ID is required');
+      throw new ValidationError("Valid invoice ID is required");
     }
 
     // Validate request body
@@ -98,8 +150,8 @@ const updateInvoice = async (req, res, next) => {
 
     return res.json({
       success: true,
-      message: 'Invoice updated successfully',
-      data: invoice
+      message: "Invoice updated successfully",
+      data: invoice,
     });
   } catch (error) {
     next(error);
@@ -113,19 +165,22 @@ const getInvoicesByVehicle = async (req, res, next) => {
     const { page = 1, limit = 10 } = req.query;
 
     if (!vehicleId || isNaN(parseInt(vehicleId))) {
-      throw new ValidationError('Valid vehicle ID is required');
+      throw new ValidationError("Valid vehicle ID is required");
     }
 
-    const result = await invoiceServices.getInvoicesByVehicle(parseInt(vehicleId), { page, limit });
+    const result = await invoiceServices.getInvoicesByVehicle(
+      parseInt(vehicleId),
+      { page, limit }
+    );
 
     res.json({
       success: true,
-      message: 'Vehicle invoices fetched successfully',
+      message: "Vehicle invoices fetched successfully",
       data: {
         vehicle: result.vehicle,
-        invoices: result.invoices
+        invoices: result.invoices,
       },
-      pagination: result.pagination
+      pagination: result.pagination,
     });
   } catch (error) {
     next(error);
@@ -148,8 +203,8 @@ const getRenewalReminders = async (req, res, next) => {
       message: `Renewal reminders for next ${value.days} days`,
       data: {
         count: invoices.length,
-        invoices
-      }
+        invoices,
+      },
     });
   } catch (error) {
     next(error);
@@ -163,8 +218,8 @@ const getDashboardStats = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Dashboard statistics fetched successfully',
-      data: stats
+      message: "Dashboard statistics fetched successfully",
+      data: stats,
     });
   } catch (error) {
     next(error);
@@ -173,7 +228,6 @@ const getDashboardStats = async (req, res, next) => {
 
 const getReceiptNo = async (req, res, next) => {
   try {
-
     let result = await IndexInfo.getReceiptNo(req.query.economic_year_id);
 
     let max_id = result.max_id;
@@ -186,8 +240,8 @@ const getReceiptNo = async (req, res, next) => {
       (parseInt(max_id) + 1);
     return res.status(200).json({
       success: true,
-      message: 'Receipt number fetched successfully',
-      data: receipt_no
+      message: "Receipt number fetched successfully",
+      data: receipt_no,
     });
   } catch (error) {
     throw new Error(error);
@@ -197,7 +251,7 @@ const getReceiptNo = async (req, res, next) => {
 const getVehicleExpiryDate = async (req, res, next) => {
   try {
     const lastExpiry = await invoiceServices.getVehicleExpiryDate(req.query);
-    console.log('last expiry', lastExpiry);
+    console.log("last expiry", lastExpiry);
 
     let dateOfExpiry = null;
     let calendar = new Nepali_Calendar();
@@ -227,7 +281,6 @@ const getVehicleExpiryDate = async (req, res, next) => {
       message: "Vehicle expiry date fetched successfully",
       data: dateOfExpiry,
     });
-
   } catch (error) {
     console.error("Error fetching vehicle expiry date:", error);
     return res.status(400).json({
@@ -249,14 +302,13 @@ const updatePaymentStatus = async (req, res, next) => {
     const result = await invoiceServices.updatePaymentStatus(id, req.body);
     return res.status(200).json({
       success: true,
-      message: 'Payment status updated successfully',
-      data: result
+      message: "Payment status updated successfully",
+      data: result,
     });
   } catch (error) {
     next(error);
   }
 };
-
 
 module.exports = {
   createInvoice,
@@ -268,5 +320,5 @@ module.exports = {
   getDashboardStats,
   getReceiptNo,
   getVehicleExpiryDate,
-  updatePaymentStatus
+  updatePaymentStatus,
 };

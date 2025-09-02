@@ -1,4 +1,3 @@
-
 const { Op } = require("sequelize");
 const moment = require("moment");
 const {
@@ -8,9 +7,15 @@ const {
 } = require("../../utils/error");
 const Nepali_Calendar = require("../../helpers/nepaliCalendar");
 const e = require("express");
-const { Vehicle, BillingTitleInfo, BillingTitleMappingInfo } = require("../../../models/master");
+const {
+  Vehicle,
+  BillingTitleInfo,
+  BillingTitleMappingInfo,
+} = require("../../../models/master");
 const Invoice = require("../../../models/accounting/invoice.model");
 const sequelize = require("../../config/database");
+const accounting_transaction_detailModel = require("../../../models/accounting/accounting_transaction_detail.model");
+const AccountingTransactionDetail = require("../../../models/accounting/accounting_transaction_detail.model");
 
 const createInvoice = async (invoiceData) => {
   const transaction = await sequelize.transaction();
@@ -25,8 +30,17 @@ const createInvoice = async (invoiceData) => {
       receipt_no,
       expiry_date_bs,
       amount,
-      status
+      status,
+      transaction_id,
+      cash_ledger_id,
+      sales_ledger_id,
+      functional_year_id, //renew mapping title
+      bank_id,
+      branch_id,
+      created_by,
     } = invoiceData;
+
+    console.log(invoiceData);
     
     const nepaliCalendar = new Nepali_Calendar();
     const invoice_date = nepaliCalendar.BSToADConvert(bill_date_bs);
@@ -38,11 +52,13 @@ const createInvoice = async (invoiceData) => {
       throw new NotFoundError("Vehicle not found");
     }
     // Check if billing title exists
-    const billingTitle = await BillingTitleInfo.findByPk(billing_title_id, { status: 1 });
+    const billingTitle = await BillingTitleInfo.findByPk(billing_title_id, {
+      status: 1,
+    });
     if (!billingTitle) {
       throw new NotFoundError("Billing title not found");
     }
-
+    const narration = "test vechole";
     // Create invoice
     const invoice = await Invoice.create(
       {
@@ -51,18 +67,223 @@ const createInvoice = async (invoiceData) => {
         billing_title_id,
         rate: amount,
         expiry_date: expire_date,
-        payment_mode:payment_method.toLowerCase(),
+        payment_mode: payment_method.toLowerCase(),
         remarks,
         invoice_date: invoice_date || new Date(),
-        invoice_date_bs:bill_date_bs,
-        expire_date_bs:expiry_date_bs,
+        invoice_date_bs: bill_date_bs,
+        expire_date_bs: expiry_date_bs,
         receipt_no,
         total_amount: amount,
         status: status || "pending",
-
       },
       { transaction }
     );
+
+    const tableId = invoice.id;
+
+    if (payment_method.toUpperCase() === "CASH") {
+      // Cash in hand ledger (Debit)
+      await accounting_transaction_detailModel.create(
+        {
+          comes_from: "SALES ENTRY",
+          ledger_id: cash_ledger_id,
+          credit: 0.0,
+          debit: amount,
+          table_id: tableId,
+          transaction_id,
+          voucher_date_ad: invoice_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Renew Voucher",
+          functional_year_id,
+          branch_id,
+          narration: `Cash Paid By ${narration}`,
+          created_by,
+        },
+        { transaction }
+      );
+
+      // Sales ledger (Credit - without VAT)
+      await accounting_transaction_detailModel.create(
+        {
+          comes_from: "SALES ENTRY",
+          ledger_id: sales_ledger_id,
+          credit: amount, //grand_total_amount - vat_amount
+          debit: 0.0,
+          table_id: tableId,
+          transaction_id,
+          voucher_date_ad: invoice_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Renew Voucher",
+          functional_year_id,
+          branch_id,
+          narration: `Cash Paid By ${narration}`,
+          created_by,
+        },
+        { transaction }
+      );
+
+      // VAT payable ledger
+      // if (vat_amount > 0) {
+      //   await AccountingTransactionDetail.create(
+      //     {
+      //       comes_from: "SALES ENTRY",
+      //       ledger_id: process.env.VAT_LEDGER_ID, // Ensure vat_payable_ledger_id is mapped properly
+      //       credit: vat_amount,
+      //       debit: 0.0,
+      //       table_id: salesId,
+      //       transaction_id,
+      //       voucher_date_ad: invoice_date,
+      //       voucher_date_bs: bill_date_bs,
+      //       voucher_number: receipt_no,
+      //       voucher_type: "Sales Voucher",
+      //       functional_year_id,
+      //       branch_id,
+      //       narration: `Cash Paid By ${narration}`,
+      //       created_by,
+      //     },
+      //     { transaction }
+      //   );
+      // }
+    }
+
+    /** ---------------------- CREDIT ---------------------- **/
+    if (payment_method.toUpperCase() === "CREDIT") {
+      // Sales ledger credit
+      await AccountingTransactionDetail.create(
+        {
+          comes_from: "SALES ENTRY",
+          ledger_id: sales_ledger_id,
+          credit: amount,// - vat_amount,
+          debit: 0.0,
+          table_id: salesId,
+          transaction_id,
+          voucher_date_ad: invoice_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Renew Voucher",
+          functional_year_id,
+          branch_id,
+          narration: `Credit Sales ${narration}`,
+          created_by,
+        },
+        { transaction: t }
+      );
+
+      // Party ledger debit
+      await AccountingTransactionDetail.create(
+        {
+          comes_from: "SALES ENTRY",
+          ledger_id: party_ledger_id,
+          credit: 0.0,
+          debit: amount,
+          table_id: salesId,
+          transaction_id,
+          voucher_date_ad: invoice_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Renew Voucher",
+          functional_year_id,
+          branch_id,
+          narration: `Credit Sales ${narration}`,
+          created_by,
+        },
+        { transaction: t }
+      );
+
+      // VAT payable
+      // if (vat_amount > 0) {
+      //   await AccountingTransactionDetail.create(
+      //     {
+      //       comes_from: "SALES ENTRY",
+      //       ledger_id: process.env.VAT_LEDGER_ID,
+      //       credit: vat_amount,
+      //       debit: 0.0,
+      //       table_id: salesId,
+      //       transaction_id,
+      //       voucher_date_ad: invoice_date_ad,
+      //       voucher_date_bs: invoice_date_bs,
+      //       voucher_number: receipt_no,
+      //       voucher_type: "Sales Voucher",
+      //       functional_year_id,
+      //       branch_id,
+      //       narration: `Credit Sales ${narration}`,
+      //       created_by,
+      //     },
+      //     { transaction: t }
+      //   );
+      // }
+    }
+
+    /** ---------------------- DIRECT BANK TRANSFER ---------------------- **/
+    if (payment_method.toUpperCase() === "DIRECT BANK TRANSFER") {
+      // Sales ledger credit
+      await AccountingTransactionDetail.create(
+        {
+          comes_from: "SALES ENTRY",
+          ledger_id: sales_ledger_id,
+          credit: amount, //rand_total_amount - vat_amount
+          debit: 0.0,
+          table_id: salesId,
+          transaction_id,
+          voucher_date_ad: invoice_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Renew Voucher",
+          functional_year_id,
+          branch_id,
+          narration: `Direct Bank Transfer Invoice ${narration}`,
+          created_by,
+        },
+        { transaction }
+      );
+
+      // Bank ledger debit
+      await AccountingTransactionDetail.create(
+        {
+          comes_from: "SALES ENTRY",
+          ledger_id: bank_id,
+          credit: 0.0,
+          debit: amount,
+          table_id: salesId,
+          transaction_id,
+          voucher_date_ad: invoice_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Renew Voucher",
+          functional_year_id,
+          branch_id,
+          narration: `Direct Bank Transfer Sales ${narration}`,
+          created_by,
+        },
+        { transaction }
+      );
+
+      // VAT payable ledger
+      // if (vat_amount > 0) {
+      //   await AccountingTransactionDetail.create(
+      //     {
+      //       comes_from: "SALES ENTRY",
+      //       ledger_id: process.env.VAT_LEDGER_ID,
+      //       credit: vat_amount,
+      //       debit: 0.0,
+      //       table_id: salesId,
+      //       transaction_id,
+      //       voucher_date_ad: invoice_date_ad,
+      //       voucher_date_bs: invoice_date_bs,
+      //       voucher_number: receipt_no,
+      //       voucher_type: "Sales Voucher",
+      //       functional_year_id,
+      //       branch_id,
+      //       narration: `Direct Bank Transfer Sales ${narration}`,
+      //       created_by,
+      //     },
+      //     { transaction: t }
+      //   );
+      // }
+    }
+
     await transaction.commit();
     return invoice;
   } catch (error) {
@@ -106,7 +327,6 @@ const getInvoices = async (filters = {}) => {
     throw new DatabaseError("Error fetching invoices", error);
   }
 };
-
 
 const getInvoiceById = async (id) => {
   try {
@@ -322,5 +542,5 @@ module.exports = {
   getRenewalReminders,
   getDashboardStats,
   getVehicleExpiryDate,
-  updatePaymentStatus
+  updatePaymentStatus,
 };
