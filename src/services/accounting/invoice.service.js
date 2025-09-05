@@ -40,7 +40,7 @@ const createInvoice = async (invoiceData) => {
       created_by,
     } = invoiceData;
 
-    console.log(invoiceData);
+  
     
     const nepaliCalendar = new Nepali_Calendar();
     const invoice_date = nepaliCalendar.BSToADConvert(bill_date_bs);
@@ -51,6 +51,7 @@ const createInvoice = async (invoiceData) => {
     if (!vehicle) {
       throw new NotFoundError("Vehicle not found");
     }
+
     // Check if billing title exists
     const billingTitle = await BillingTitleInfo.findByPk(billing_title_id, {
       status: 1,
@@ -59,6 +60,7 @@ const createInvoice = async (invoiceData) => {
       throw new NotFoundError("Billing title not found");
     }
     const narration = "test vechole";
+    
     // Create invoice
     const invoice = await Invoice.create(
       {
@@ -151,13 +153,14 @@ const createInvoice = async (invoiceData) => {
     /** ---------------------- CREDIT ---------------------- **/
     if (payment_method.toUpperCase() === "CREDIT") {
       // Sales ledger credit
+    
       await AccountingTransactionDetail.create(
         {
           comes_from: "SALES ENTRY",
           ledger_id: sales_ledger_id,
           credit: amount,// - vat_amount,
           debit: 0.0,
-          table_id: salesId,
+          table_id: tableId,
           transaction_id,
           voucher_date_ad: invoice_date,
           voucher_date_bs: bill_date_bs,
@@ -168,17 +171,17 @@ const createInvoice = async (invoiceData) => {
           narration: `Credit Sales ${narration}`,
           created_by,
         },
-        { transaction: t }
+        { transaction }
       );
 
       // Party ledger debit
       await AccountingTransactionDetail.create(
         {
           comes_from: "SALES ENTRY",
-          ledger_id: party_ledger_id,
+          ledger_id: 1,
           credit: 0.0,
           debit: amount,
-          table_id: salesId,
+          table_id: tableId,
           transaction_id,
           voucher_date_ad: invoice_date,
           voucher_date_bs: bill_date_bs,
@@ -189,7 +192,7 @@ const createInvoice = async (invoiceData) => {
           narration: `Credit Sales ${narration}`,
           created_by,
         },
-        { transaction: t }
+        { transaction }
       );
 
       // VAT payable
@@ -211,7 +214,7 @@ const createInvoice = async (invoiceData) => {
       //       narration: `Credit Sales ${narration}`,
       //       created_by,
       //     },
-      //     { transaction: t }
+      //     { transaction }
       //   );
       // }
     }
@@ -225,7 +228,7 @@ const createInvoice = async (invoiceData) => {
           ledger_id: sales_ledger_id,
           credit: amount, //rand_total_amount - vat_amount
           debit: 0.0,
-          table_id: salesId,
+          table_id: tableId,
           transaction_id,
           voucher_date_ad: invoice_date,
           voucher_date_bs: bill_date_bs,
@@ -246,7 +249,7 @@ const createInvoice = async (invoiceData) => {
           ledger_id: bank_id,
           credit: 0.0,
           debit: amount,
-          table_id: salesId,
+          table_id: tableId,
           transaction_id,
           voucher_date_ad: invoice_date,
           voucher_date_bs: bill_date_bs,
@@ -279,7 +282,7 @@ const createInvoice = async (invoiceData) => {
       //       narration: `Direct Bank Transfer Sales ${narration}`,
       //       created_by,
       //     },
-      //     { transaction: t }
+      //     { transaction }
       //   );
       // }
     }

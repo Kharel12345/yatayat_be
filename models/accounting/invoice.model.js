@@ -77,11 +77,11 @@ const Invoice = sequelize.define(
       },
     },
     payment_mode: {
-      type: DataTypes.ENUM("cash", "card", "bank_transfer", "online", "cheque"),
+      type: DataTypes.ENUM("cash", "card", "bank_transfer", "online", "credit"),
       allowNull: true,
       validate: {
         isIn: {
-          args: [["cash", "card", "bank_transfer", "online", "cheque"]],
+          args: [["cash", "card", "bank_transfer", "online", "credit"]],
           msg: "Invalid payment mode",
         },
       },
