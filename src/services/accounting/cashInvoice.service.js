@@ -79,11 +79,11 @@ const getAllCashInvoices = async (filters = {}) => {
     };
 
     // Add search filter
-    if (search) {
-      whereClause[Op.or] = [
-        { remarks: { [Op.like]: `%${search}%` } },
-      ];
-    }
+    // if (search) {
+    //   whereClause[Op.or] = [
+    //     { vehicleNo: { [Op.like]: `%${search}%` } },
+    //   ];
+    // }
 
     // Add payment method filter
     if (payment_method) {
@@ -106,6 +106,9 @@ const getAllCashInvoices = async (filters = {}) => {
         {
           model: Vehicle,
           as: "vehicle",
+          where: {
+            vehicleNo: { [Op.like]: `%${search}%` },
+          }
         },
       ],
       order: [["created_at", "DESC"]],

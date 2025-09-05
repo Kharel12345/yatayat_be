@@ -12,7 +12,11 @@ const createCashInvoice = async (req, res, next) => {
         const result = await cashInvoiceService.createCashInvoice(payload);
 
         res.status(201).json(
-            DATA_SAVED(result, "Cash invoice created successfully")
+            {
+                success: true,
+                message: "Cash invoice created successfully",
+                data: result
+            }
         );
     } catch (error) {
         logger.error(
