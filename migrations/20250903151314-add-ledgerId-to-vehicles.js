@@ -4,10 +4,10 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.addColumn('Vehicles', 'ledgerId', {
       type: Sequelize.INTEGER,
-      allowNull: true,
+      allowNull: true,  // or true, depending on your requirement
       references: {
-        model: 'LedgerInfo',
-        key: 'id',        
+        model: 'accounting_ledgerinfo', // 👈 must match tableName in LedgerInfo model
+        key: 'id',
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
