@@ -41,7 +41,7 @@ const createInvoice = async (invoiceData) => {
     } = invoiceData;
 
     console.log(invoiceData);
-    
+
     const nepaliCalendar = new Nepali_Calendar();
     const invoice_date = nepaliCalendar.BSToADConvert(bill_date_bs);
     const expire_date = nepaliCalendar.BSToADConvert(expiry_date_bs);
@@ -432,6 +432,8 @@ const getInvoicesByVehicle = async (vehicleId, filters = {}) => {
 
 // Get renewal reminders
 const getRenewalReminders = async (days = 7) => {
+  console.log('days', days);
+
   try {
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + parseInt(days));
@@ -446,11 +448,11 @@ const getRenewalReminders = async (days = 7) => {
       include: [
         {
           model: Vehicle,
-          attributes: ["id", "name", "subscription_type"],
+          as: 'vehicleInfo'
         },
         {
           model: BillingTitleInfo,
-          attributes: ["id", "billing_title", "rate"],
+          as: 'billingInfo'
         },
       ],
       order: [["expiry_date", "ASC"]],
