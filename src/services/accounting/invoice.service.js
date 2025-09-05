@@ -11,11 +11,15 @@ const {
   Vehicle,
   BillingTitleInfo,
   BillingTitleMappingInfo,
+  Operator,
+  Driver,
+  Helper,
 } = require("../../../models/master");
 const Invoice = require("../../../models/accounting/invoice.model");
 const sequelize = require("../../config/database");
 const accounting_transaction_detailModel = require("../../../models/accounting/accounting_transaction_detail.model");
 const AccountingTransactionDetail = require("../../../models/accounting/accounting_transaction_detail.model");
+const LedgerInfo = require("../../../models/accounting/ledger.model");
 
 const createInvoice = async (invoiceData) => {
   const transaction = await sequelize.transaction();
@@ -76,7 +80,7 @@ const createInvoice = async (invoiceData) => {
         expire_date_bs: expiry_date_bs,
         receipt_no,
         total_amount: amount,
-        status: status || "pending",
+        status: status,
       },
       { transaction }
     );
@@ -302,34 +306,40 @@ const getInvoices = async (filters = {}) => {
     const offset = (page - 1) * limit;
 
     let whereClause = {};
-    if (status) whereClause.status = status;
-    if (vehicle_id) whereClause.vehicle_id = vehicle_id;
+
+    if (status !== undefined) {
+      whereClause.status = Number(status); // ensure numeric
+    }
+
+    if (vehicle_id !== undefined) {
+      whereClause.vehicle_id = Number(vehicle_id); // ensure numeric
+    }
 
     const { count, rows: invoices } = await Invoice.findAndCountAll({
       where: whereClause,
       include: [
+        { model: Vehicle, as: "vehicleInfo" },
+        { model: BillingTitleInfo, as: "billingInfo" },
         {
-          model: Vehicle,
-          as: "vehicleInfo",
-        },
-        {
-          model: BillingTitleInfo,
-          as: "billingInfo",
+          model: LedgerInfo,
+          as: "bankInfo",
+          attributes: ["id", "ledgername"],
+          required: false, // LEFT JOIN
         },
       ],
       order: [["invoice_date", "DESC"]],
       limit: parseInt(limit),
-      offset: offset,
+      offset,
     });
 
-    return {
-      invoices,
-      count,
-    };
+    return { invoices, count };
   } catch (error) {
     throw new DatabaseError("Error fetching invoices", error);
   }
 };
+
+
+
 
 const getInvoiceById = async (id) => {
   try {
@@ -338,6 +348,20 @@ const getInvoiceById = async (id) => {
         {
           model: Vehicle,
           as: "vehicleInfo",
+          include: [
+            {
+              model: Operator,
+              as: "operator",
+            },
+            {
+              model: Helper,
+              as: "helper",
+            },
+            {
+              model: Driver,
+              as: "drivers",
+            },
+          ]
         },
         {
           model: BillingTitleInfo,
@@ -435,7 +459,6 @@ const getInvoicesByVehicle = async (vehicleId, filters = {}) => {
 
 // Get renewal reminders
 const getRenewalReminders = async (days = 7) => {
-  console.log('days', days);
 
   try {
     const targetDate = new Date();
@@ -538,6 +561,21 @@ const updatePaymentStatus = async (id, status) => {
   }
 };
 
+const deleteInvoice = async (id) => {
+  try {
+    const invoice = await Invoice.findByPk(id);
+    if (!invoice) {
+      throw new NotFoundError("Invoice not found");
+    }
+    invoice.status = 0;
+    await invoice.save();
+    return invoice;
+  } catch (error) {
+    if (error instanceof NotFoundError) throw error;
+    throw new DatabaseError("Error deleting invoice", error);
+  }
+};
+
 module.exports = {
   createInvoice,
   getInvoices,
@@ -548,4 +586,5 @@ module.exports = {
   getDashboardStats,
   getVehicleExpiryDate,
   updatePaymentStatus,
+  deleteInvoice
 };

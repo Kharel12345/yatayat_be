@@ -5,11 +5,14 @@ const { Op } = require("sequelize");
 
 const getIndividualLedgerReport = async (fromDate, toDate, ledgerId) => {
   try {
+    console.log('ledgerId', ledgerId);
+
     // Fetch transactions with relations
     const transactions = await accounting_transaction_detailModel.findAll({
       where: {
         status: 1,
-        ledger_id: ledgerId,
+        // ledger_id: ledgerId,
+        ...(ledgerId && { ledger_id: ledgerId }),
         voucher_date_bs: { [Op.between]: [fromDate, toDate] },
       },
       include: [

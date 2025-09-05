@@ -1,8 +1,10 @@
 // services/billingTitleInfo.service.js
 const { Op } = require("sequelize");
-const { BillingTitleInfo } = require("../../../models/master");
+const { BillingTitleInfo, BillingTitleMappingInfo } = require("../../../models/master");
 const BranchInfo = require("../../../models/branch.model");
 const LabelInfo = require("../../../models/master/label_info.model");
+const AccountingLedgerMapping = require("../../../models/accounting/ledgermapping.model");
+const LedgerInfo = require("../../../models/accounting/ledger.model");
 
 const checkBillingTitleExists = async ({ billing_title_code }) => {
   return await BillingTitleInfo.findOne({
@@ -65,6 +67,18 @@ const getAllLabelList = async () => {
   });
 };
 
+const checkSpecificBillingTitles = async () => {
+  try {
+    const result = await AccountingLedgerMapping.findAll({
+      where: {
+        label: ["Cash In Hand", "Sales Ledger"], // only these two
+      },
+    });
+    return result;
+  } catch (error) {
+    return [];
+  }
+};
 
 module.exports = {
   createBillingTitle,
@@ -74,5 +88,6 @@ module.exports = {
   softDeleteBillingTitle,
   checkBillingTitleExists,
   getAllBillingTitleList,
-  getAllLabelList
+  getAllLabelList,
+  checkSpecificBillingTitles
 };

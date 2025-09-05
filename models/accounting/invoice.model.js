@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
 const { Vehicle, BillingTitleInfo } = require("../master");
+const LedgerInfo = require("./ledger.model");
 
 const Invoice = sequelize.define(
   "Invoice",
@@ -67,15 +68,27 @@ const Invoice = sequelize.define(
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM("pending", "paid", "overdue", "cancelled"),
-      defaultValue: "pending",
+      type: DataTypes.TINYINT, // numeric 0 or 1
+      allowNull: false,
+      defaultValue: 1, // 1 = Active, 0 = Inactive
       validate: {
         isIn: {
-          args: [["pending", "paid", "overdue", "cancelled"]],
-          msg: "Status must be pending, paid, overdue, or cancelled",
+          args: [[0, 1]],
+          msg: "Status must be 0 (Inactive) or 1 (Active)",
         },
       },
     },
+    bank_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "accounting_ledgerinfo",
+        key: "id",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "RESTRICT",
+    },
+
     payment_mode: {
       type: DataTypes.ENUM("cash", "card", "bank_transfer", "online", "credit"),
       allowNull: true,
@@ -174,6 +187,12 @@ Invoice.belongsTo(BillingTitleInfo, {
   foreignKey: "billing_title_id",
   targetKey: "billing_title_id",
   as: "billingInfo",
+});
+
+Invoice.belongsTo(LedgerInfo, {
+  foreignKey: "bank_id",
+  targetKey: "id",
+  as: "bankInfo",
 });
 
 

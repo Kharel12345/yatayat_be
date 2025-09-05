@@ -29,7 +29,7 @@ const createInvoice = async (req, res, next) => {
     if (error) {
       throw new ValidationError(error.details[0].message);
     }
-    const functional_year_id = 1;
+    const functional_year_id = req.body.functional_year_id;
 
     const transaction_id = await getTransactionId(functional_year_id);
     if (transaction_id == null) {
@@ -61,22 +61,15 @@ const createInvoice = async (req, res, next) => {
           "Ledger mapping not done of ledger group Sales Ledger. Please do ledger mapping first.",
       });
     }
-
-    const bank_id = 1;
-
-    const branch_id = 1;
-    const created_by = 1;
-    req.body = {
+    const created_by = req.user.user_id;
+    const body = {
       ...req.body,
       transaction_id,
       cash_ledger_id,
       sales_ledger_id,
-      bank_id,
-      branch_id,
-      functional_year_id,
       created_by,
     };
-    const invoice = await invoiceServices.createInvoice(req.body);
+    const invoice = await invoiceServices.createInvoice(body);
 
     res.status(201).json({
       success: true,
@@ -196,9 +189,9 @@ const getRenewalReminders = async (req, res, next) => {
       throw new ValidationError(error.details[0].message);
     }
 
-    const invoices = await invoiceServices.getRenewalReminders(value.days);
+    const invoices = await invoiceServices.getRenewalReminders(req.query.days);
 
-    res.json({
+    return res.json({
       success: true,
       message: `Renewal reminders for next ${value.days} days`,
       data: {
@@ -310,6 +303,21 @@ const updatePaymentStatus = async (req, res, next) => {
   }
 };
 
+const deleteInvoice = async (req, res, next) => {
+  try {
+    await invoiceServices.deleteInvoice(req.params.id);
+    return res.status(200).json({
+      success: true,
+      message: "Invoice deleted successfully"
+    });
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+}
+
 module.exports = {
   createInvoice,
   getAllInvoices,
@@ -321,4 +329,5 @@ module.exports = {
   getReceiptNo,
   getVehicleExpiryDate,
   updatePaymentStatus,
+  deleteInvoice
 };

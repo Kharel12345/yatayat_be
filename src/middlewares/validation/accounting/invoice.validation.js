@@ -41,13 +41,14 @@ const createInvoiceSchema = Joi.object({
   expiry_date_bs: Joi.string().optional().messages({
     "date.base": "Invoice date must be a valid date",
   }),
-  status: Joi.string()
-    .valid("pending", "paid", "overdue", "cancelled")
+  status: Joi.number()
+    .valid(0, 1) // 0 = inactive, 1 = active
     .optional()
     .messages({
-      "string.base": "Status must be a string",
-      "any.only": "Status must be one of: pending, paid, overdue, cancelled",
+      "number.base": "Status must be a number",
+      "any.only": "Status must be either 0 (Inactive) or 1 (Active)",
     }),
+
   bank_id: Joi.number().integer().positive().optional().messages({
     "number.base": "Bank ID must be a number",
     "number.integer": "Bank ID must be an integer",
@@ -56,6 +57,18 @@ const createInvoiceSchema = Joi.object({
   qrRemarks: Joi.string().max(500).optional().messages({
     "string.base": "Remarks must be a string",
     "string.max": "Remarks cannot exceed 500 characters",
+  }),
+  functional_year_id: Joi.number().integer().positive().required().messages({
+    "number.base": "Functional Year ID must be a number",
+    "number.integer": "Functional Year ID must be an integer",
+    "number.positive": "Functional Year ID must be a positive number",
+    "any.required": "Functional Year ID is required",
+  }),
+  branch_id: Joi.number().integer().positive().required().messages({
+    "number.base": "Branch ID must be a number",
+    "number.integer": "Branch ID must be an integer",
+    "number.positive": "Branch ID must be a positive number",
+    "any.required": "Branch ID is required",
   })
 });
 
@@ -102,17 +115,23 @@ const getInvoicesSchema = Joi.object({
       "number.positive": "Limit must be a positive number",
       "number.max": "Limit cannot exceed 100",
     }),
-  status: Joi.string()
-    .valid("pending", "paid", "overdue", "cancelled")
+  status: Joi.number()
+    .valid(0, 1) // 0 = inactive, 1 = active
     .optional()
     .messages({
-      "string.base": "Status must be a string",
-      "any.only": "Status must be one of: pending, paid, overdue, cancelled",
+      "number.base": "Status must be a number",
+      "any.only": "Status must be either 0 (Inactive) or 1 (Active)",
     }),
   vehicle_id: Joi.number().integer().positive().optional().messages({
     "number.base": "Vehicle ID must be a number",
     "number.integer": "Vehicle ID must be an integer",
     "number.positive": "Vehicle ID must be a positive number",
+  }),
+  fromDate: Joi.string().optional().messages({
+    "date.base": "To date must be a valid date",
+  }),
+  toDate: Joi.string().optional().messages({
+    "date.base": "To date must be a valid date",
   }),
 });
 

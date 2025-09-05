@@ -3,12 +3,12 @@ const { ledgerReportService } = require("../../services/report");
 
 const getIndividualLedgerReport = async (req, res, next) => {
   try {
-    let { fromDate, toDate, ledger_id } = req.query;
+    let { fromDate, toDate, ledgerId } = req.query;
 
     const result = await ledgerReportService.getIndividualLedgerReport(
       fromDate,
       toDate,
-      ledger_id
+      ledgerId
     );
 
     return res.status(200).json({

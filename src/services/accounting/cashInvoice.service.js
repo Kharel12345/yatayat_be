@@ -132,7 +132,6 @@ const getCashInvoiceById = async (id) => {
         {
           model: Vehicle,
           as: "vehicle",
-          attributes: ["id", "vehicle_number", "vehicle_type"],
         },
       ],
     });

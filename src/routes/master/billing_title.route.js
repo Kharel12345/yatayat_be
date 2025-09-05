@@ -41,5 +41,9 @@ router.get(
   BillingTitleController.getAllLabelList
 )
 
+router.get('/check-billing-tile-mapped',
+  BillingTitleController.checkBillingTileMapped
+)
+
 
 module.exports = router;

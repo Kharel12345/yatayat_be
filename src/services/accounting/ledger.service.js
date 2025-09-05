@@ -239,9 +239,9 @@ const getledgerGroup = async (name) => {
 const getActiveLedger = async () => {
   try {
     const result = await AccountingLedgerMapping.findAll({
-      where: { status: 1 },   // Assuming 'status' column indicates active/inactive
-      attributes: ['id', 'ledger_name', 'group_name'], // Select only needed fields
-      order: [['ledger_name', 'ASC']] // Optional ordering
+      where: { status: 1 },  
+      attributes: ['id', 'ledger_name', 'group_name'], 
+      order: [['ledger_name', 'ASC']] 
     });
     return result;
   } catch (error) {

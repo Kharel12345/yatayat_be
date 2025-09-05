@@ -143,6 +143,19 @@ const getAllLabelList = async (req, res, next) => {
   }
 };
 
+const checkBillingTileMapped = async (req, res, next) => {
+  try {
+    const result = await BillingTitleService.checkSpecificBillingTitles();
+
+    res.json(result);
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+};
+
 module.exports = {
   createBillingTitle,
   updateBillingTitle,
@@ -150,5 +163,6 @@ module.exports = {
   getBillingTitles,
   deleteBillingTitle,
   getAllBillingTitleList,
-  getAllLabelList
+  getAllLabelList,
+  checkBillingTileMapped
 };

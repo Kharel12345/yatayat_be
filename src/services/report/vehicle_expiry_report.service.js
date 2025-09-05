@@ -20,17 +20,14 @@ const getVehicleExpiryReport = async (toDate) => {
         {
           model: Vehicle,
           as: "vehicleInfo",
-          // attributes: ["vehicleNo", "ownerName", "address", "panNo", "membershipNo"],
         },
         {
           model: BillingTitleInfo,
           as: "billingInfo",
-          // attributes: ["billing_title_name"],
         },
       ],
       order: [
         ["expiry_date", "ASC"], // Show most urgent expiries first
-        ["vehicleInfo", "vehicleNo", "ASC"],
       ],
       raw: false,
     });
@@ -47,12 +44,12 @@ const getVehicleExpiryReport = async (toDate) => {
         address: vehicle?.address || "N/A",
         panNo: vehicle?.panNo || "N/A",
         membershipNo: vehicle?.membershipNo || "N/A",
-        contactNumber: "N/A", // This field doesn't exist in current schema
+        // contactNumber: "N/A", // This field doesn't exist in current schema
         expiryDate: invoice.expiry_date ? invoice.expiry_date.toISOString().split('T')[0] : "N/A",
         expiryDateBS: invoice.expire_date_bs || "N/A",
         lastRenewDate: invoice.invoice_date ? invoice.invoice_date.toISOString().split('T')[0] : "N/A",
         lastRenewDateBS: invoice.invoice_date_bs || "N/A",
-        billingTitle: billing?.billing_title_name || "N/A",
+        billingTitle: billing?.billing_title || "N/A",
         invoiceNumber: invoice.invoice_number || "N/A",
         status: invoice.status,
         rate: invoice.rate || 0,
