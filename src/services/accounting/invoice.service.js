@@ -1,12 +1,13 @@
 const { Op } = require("sequelize");
-const moment = require("moment");
 const {
   NotFoundError,
   ValidationError,
   DatabaseError,
 } = require("../../utils/error");
 const Nepali_Calendar = require("../../helpers/nepaliCalendar");
-const e = require("express");
+const TRANSACTION_INDEX_CODE = process.env.TRANSACTION_INDEX_CODE;
+const RECEIPT_NO = process.env.RECEIPT_INDEX_CODE;
+
 const {
   Vehicle,
   BillingTitleInfo,
@@ -20,6 +21,7 @@ const sequelize = require("../../config/database");
 const accounting_transaction_detailModel = require("../../../models/accounting/accounting_transaction_detail.model");
 const AccountingTransactionDetail = require("../../../models/accounting/accounting_transaction_detail.model");
 const LedgerInfo = require("../../../models/accounting/ledger.model");
+const IndexInfo = require("../../../models/master/index_info.model");
 
 const createInvoice = async (invoiceData) => {
   const transaction = await sequelize.transaction();
@@ -44,8 +46,6 @@ const createInvoice = async (invoiceData) => {
       created_by,
     } = invoiceData;
 
-  
-
     const nepaliCalendar = new Nepali_Calendar();
     const invoice_date = nepaliCalendar.BSToADConvert(bill_date_bs);
     const expire_date = nepaliCalendar.BSToADConvert(expiry_date_bs);
@@ -55,6 +55,7 @@ const createInvoice = async (invoiceData) => {
     if (!vehicle) {
       throw new NotFoundError("Vehicle not found");
     }
+    const vechile_ledger_id = vehicle.ledgerId;
 
     // Check if billing title exists
     const billingTitle = await BillingTitleInfo.findByPk(billing_title_id, {
@@ -64,7 +65,7 @@ const createInvoice = async (invoiceData) => {
       throw new NotFoundError("Billing title not found");
     }
     const narration = "test vechole";
-    
+
     // Create invoice
     const invoice = await Invoice.create(
       {
@@ -157,12 +158,12 @@ const createInvoice = async (invoiceData) => {
     /** ---------------------- CREDIT ---------------------- **/
     if (payment_method.toUpperCase() === "CREDIT") {
       // Sales ledger credit
-    
+
       await AccountingTransactionDetail.create(
         {
           comes_from: "SALES ENTRY",
           ledger_id: sales_ledger_id,
-          credit: amount,// - vat_amount,
+          credit: amount, // - vat_amount,
           debit: 0.0,
           table_id: tableId,
           transaction_id,
@@ -182,7 +183,7 @@ const createInvoice = async (invoiceData) => {
       await AccountingTransactionDetail.create(
         {
           comes_from: "SALES ENTRY",
-          ledger_id: 1,
+          ledger_id: vechile_ledger_id,
           credit: 0.0,
           debit: amount,
           table_id: tableId,
@@ -290,6 +291,25 @@ const createInvoice = async (invoiceData) => {
       //   );
       // }
     }
+    await IndexInfo.update(
+      { max_id: transaction_id },
+      {
+        where: {
+          index_code: "transaction_id",
+          functional_year_id: functional_year_id,
+        },
+      }
+    );
+
+    await IndexInfo.update(
+      { max_id: sequelize.literal("max_id + 1") },
+      {
+        where: {
+          index_code: "receipt_no",
+          functional_year_id: functional_year_id,
+        },
+      }
+    );
 
     await transaction.commit();
     return invoice;
@@ -338,9 +358,6 @@ const getInvoices = async (filters = {}) => {
   }
 };
 
-
-
-
 const getInvoiceById = async (id) => {
   try {
     const invoice = await Invoice.findByPk(id, {
@@ -361,7 +378,7 @@ const getInvoiceById = async (id) => {
               model: Driver,
               as: "drivers",
             },
-          ]
+          ],
         },
         {
           model: BillingTitleInfo,
@@ -459,7 +476,6 @@ const getInvoicesByVehicle = async (vehicleId, filters = {}) => {
 
 // Get renewal reminders
 const getRenewalReminders = async (days = 7) => {
-
   try {
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + parseInt(days));
@@ -469,16 +485,16 @@ const getRenewalReminders = async (days = 7) => {
         expiry_date: {
           [Op.lte]: targetDate,
         },
-        status: "paid",
+        status: 1,
       },
       include: [
         {
           model: Vehicle,
-          as: 'vehicleInfo'
+          as: "vehicleInfo",
         },
         {
           model: BillingTitleInfo,
-          as: 'billingInfo'
+          as: "billingInfo",
         },
       ],
       order: [["expiry_date", "ASC"]],
@@ -586,5 +602,5 @@ module.exports = {
   getDashboardStats,
   getVehicleExpiryDate,
   updatePaymentStatus,
-  deleteInvoice
+  deleteInvoice,
 };

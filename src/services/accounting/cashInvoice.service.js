@@ -8,6 +8,10 @@ const {
 const Nepali_Calendar = require("../../helpers/nepaliCalendar");
 const { Vehicle } = require("../../../models/master");
 const CashInvoice = require("../../../models/accounting/cash_invoice.model");
+const AccountingTransactionDetail = require("../../../models/accounting/accounting_transaction_detail.model");
+const IndexInfo = require("../../../models/master/index_info.model");
+const { ORGANIZATION_NAME_PREFIX } = require("../../config/constant");
+const { ledgerServices } = require("./index");
 const sequelize = require("../../config/database");
 
 const createCashInvoice = async (cashInvoiceData) => {
@@ -23,18 +27,35 @@ const createCashInvoice = async (cashInvoiceData) => {
       branch_id,
       functional_year_id,
       created_by,
+      bank_id,
     } = cashInvoiceData;
 
     const nepaliCalendar = new Nepali_Calendar();
     const bill_date = nepaliCalendar.BSToADConvert(bill_date_bs);
 
     // Check if vehicle exists
-    const vehicle = await Vehicle.findByPk(vehicle_id, {
-      where: { status: 1 }
-    });
+    const vehicle = await Vehicle.findByPk(vehicle_id, { where: { status: 1 } });
     if (!vehicle) {
       throw new NotFoundError("Vehicle not found");
     }
+
+    // Prepare receipt_no and transaction_id
+    const receiptIndex = await IndexInfo.findOne({
+      where: { functional_year_id, index_code: "receipt_no" },
+      attributes: ["max_id", "index_code"],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+    const txnIndex = await IndexInfo.findOne({
+      where: { functional_year_id, index_code: "transaction_id" },
+      attributes: ["max_id", "index_code"],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    const nextReceipt = (parseInt(receiptIndex?.max_id || 0) + 1);
+    const receipt_no = `${ORGANIZATION_NAME_PREFIX}-${receiptIndex?.index_code || "receipt_no"}-${nextReceipt}`;
+    const transaction_id = parseInt((txnIndex?.max_id || 0)) + 1;
 
     // Create cash invoice
     const cashInvoice = await CashInvoice.create(
@@ -42,6 +63,7 @@ const createCashInvoice = async (cashInvoiceData) => {
         vehicle_id,
         bill_date: bill_date || new Date(),
         bill_date_bs,
+        receipt_no,
         payment_method: payment_method.toLowerCase(),
         amount,
         remarks,
@@ -52,6 +74,118 @@ const createCashInvoice = async (cashInvoiceData) => {
       },
       { transaction }
     );
+
+    // Ledger postings: Receipt
+    const narration = `Receipt from vehicle ID ${vehicle_id}`;
+
+    if (payment_method.toLowerCase() === "cash") {
+      // Get Cash in Hand ledger
+      const cashLedgerData = await ledgerServices.getAssociatedLedgerId("Cash in Hand");
+      const cash_ledger_id = cashLedgerData?.ledger_id;
+      if (!cash_ledger_id) {
+        throw new ValidationError("Ledger mapping for 'Cash in Hand' is missing.");
+      }
+      // Debit Cash in Hand
+      await AccountingTransactionDetail.create(
+        {
+          comes_from: "CASH RECEIPT",
+          ledger_id: cash_ledger_id,
+          credit: 0.0,
+          debit: amount,
+          table_id: cashInvoice.id,
+          transaction_id,
+          voucher_date_ad: bill_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Receipt Voucher",
+          functional_year_id,
+          branch_id,
+          narration,
+          created_by,
+        },
+        { transaction }
+      );
+      // Credit Vehicle ledger
+      await AccountingTransactionDetail.create(
+        {
+          comes_from: "CASH RECEIPT",
+          ledger_id: vehicle.ledgerId,
+          credit: amount,
+          debit: 0.0,
+          table_id: cashInvoice.id,
+          transaction_id,
+          voucher_date_ad: bill_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Receipt Voucher",
+          functional_year_id,
+          branch_id,
+          narration,
+          created_by,
+        },
+        { transaction }
+      );
+    }
+
+    if (payment_method.toLowerCase() === "online") {
+      if (!bank_id) {
+        throw new ValidationError("bank_id is required for online payments");
+      }
+      // Debit Bank ledger (bank_id)
+      await AccountingTransactionDetail.create(
+        {
+          comes_from: "CASH RECEIPT",
+          ledger_id: bank_id,
+          credit: 0.0,
+          debit: amount,
+          table_id: cashInvoice.id,
+          transaction_id,
+          voucher_date_ad: bill_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Receipt Voucher",
+          functional_year_id,
+          branch_id,
+          narration,
+          created_by,
+        },
+        { transaction }
+      );
+      // Credit Vehicle ledger
+      await AccountingTransactionDetail.create(
+        {
+          comes_from: "CASH RECEIPT",
+          ledger_id: vehicle.ledgerId,
+          credit: amount,
+          debit: 0.0,
+          table_id: cashInvoice.id,
+          transaction_id,
+          voucher_date_ad: bill_date,
+          voucher_date_bs: bill_date_bs,
+          voucher_number: receipt_no,
+          voucher_type: "Receipt Voucher",
+          functional_year_id,
+          branch_id,
+          narration,
+          created_by,
+        },
+        { transaction }
+      );
+    }
+
+    // Update indices
+    if (txnIndex) {
+      await IndexInfo.update(
+        { max_id: transaction_id },
+        { where: { functional_year_id, index_code: "transaction_id" }, transaction }
+      );
+    }
+    if (receiptIndex) {
+      await IndexInfo.update(
+        { max_id: sequelize.literal("max_id + 1") },
+        { where: { functional_year_id, index_code: "receipt_no" }, transaction }
+      );
+    }
 
     await transaction.commit();
     return cashInvoice;
@@ -100,17 +234,20 @@ const getAllCashInvoices = async (filters = {}) => {
       whereClause.functional_year_id = functional_year_id;
     }
 
+    const includeClause = [
+      {
+        model: Vehicle,
+        as: "vehicle",
+        attributes: ["id", "vehicleNo"],
+        ...(search
+          ? { where: { vehicleNo: { [Op.like]: `%${search}%` } } }
+          : {}),
+      },
+    ];
+
     const { count, rows } = await CashInvoice.findAndCountAll({
       where: whereClause,
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-          where: {
-            vehicleNo: { [Op.like]: `%${search}%` },
-          }
-        },
-      ],
+      include: includeClause,
       order: [["created_at", "DESC"]],
       limit: parseInt(limit),
       offset: parseInt(offset),
@@ -254,7 +391,7 @@ const getCashInvoicesByVehicle = async (vehicleId, filters = {}) => {
         {
           model: Vehicle,
           as: "vehicle",
-          attributes: ["id", "vehicle_number", "vehicle_type"],
+          attributes: ["id", "vehicleNo"],
         },
       ],
       order: [["created_at", "DESC"]],

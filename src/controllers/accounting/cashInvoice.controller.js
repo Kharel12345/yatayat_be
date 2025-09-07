@@ -1,11 +1,17 @@
 const cashInvoiceService = require("../../services/accounting/cashInvoice.service");
 const { SUCCESS_API_FETCH, DATA_SAVED } = require("../../helpers/response");
 const logger = require("../../config/winstonLoggerConfig");
+const { createCashReceiptSchema } = require("../../middlewares/validation/accounting/cash_invoice.validation");
+const { ValidationError } = require("../../utils/error");
 
 const createCashInvoice = async (req, res, next) => {
     try {
+        const { error, value } = createCashReceiptSchema.validate(req.body);
+        if (error) {
+            throw new ValidationError(error.details[0].message);
+        }
         const payload = {
-            ...req.body,
+            ...value,
             created_by: req.user.user_id,
         };
 
@@ -26,19 +32,16 @@ const createCashInvoice = async (req, res, next) => {
     }
 };
 
+const { listCashReceiptSchema } = require("../../middlewares/validation/accounting/cash_invoice.validation");
+
 const getAllCashInvoices = async (req, res, next) => {
     try {
-        const filters = {
-            page: req.query.page || 1,
-            limit: req.query.limit || 10,
-            search: req.query.search || "",
-            payment_method: req.query.payment_method || "",
-            status: req.query.status || 1,
-            branch_id: req.query.branch_id,
-            functional_year_id: req.query.functional_year_id,
-        };
+        const { error, value } = listCashReceiptSchema.validate(req.query);
+        if (error) {
+            throw new ValidationError(error.details[0].message);
+        }
 
-        const result = await cashInvoiceService.getAllCashInvoices(filters);
+        const result = await cashInvoiceService.getAllCashInvoices(value);
 
         res.json(
             SUCCESS_API_FETCH(result, "Cash invoices fetched successfully")

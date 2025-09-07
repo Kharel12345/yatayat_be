@@ -30,6 +30,10 @@ const CashInvoice = sequelize.define(
       type: DataTypes.STRING(244),
       allowNull: false,
     },
+    receipt_no: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
     payment_method: {
       type: DataTypes.ENUM("cash", "online"),
       allowNull: false,

@@ -2,8 +2,8 @@ const { where } = require("sequelize");
 const IndexInfo = require("../../../models/master/index_info.model");
 
 // Constants for index codes
-const RECEIPT_INDEX_CODE = "receipt_no";
-const TRANSACTION_INDEX_CODE = "transaction_id";
+const RECEIPT_INDEX_CODE = process.env.RECEIPT_INDEX_CODE || "receipt_no";
+const TRANSACTION_INDEX_CODE =process.env.TRANSACTION_INDEX_CODE || "transaction_id";
 
 const getIndexInfo = async (functionalYearId, indexCode) => {
   try {
