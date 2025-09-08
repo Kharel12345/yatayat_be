@@ -78,10 +78,11 @@ const getCashInvoiceById = async (req, res, next) => {
     }
 };
 
+const { updateCashReceiptSchema } = require("../../middlewares/validation/accounting/cash_invoice.validation");
+
 const updateCashInvoice = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const updateData = req.body;
 
         if (!id || isNaN(parseInt(id))) {
             return res.status(400).json({
@@ -90,9 +91,14 @@ const updateCashInvoice = async (req, res, next) => {
             });
         }
 
+        const { error, value } = updateCashReceiptSchema.validate(req.body);
+        if (error) {
+            throw new ValidationError(error.details[0].message);
+        }
+
         const result = await cashInvoiceService.updateCashInvoice(
             parseInt(id),
-            updateData
+            value
         );
 
         res.json(

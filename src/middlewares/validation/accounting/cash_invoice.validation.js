@@ -56,7 +56,49 @@ const listCashReceiptSchema = Joi.object({
   functional_year_id: Joi.number().integer().positive().optional(),
 });
 
+const updateCashReceiptSchema = Joi.object({
+  vehicle_id: Joi.number().integer().positive().optional().messages({
+    "number.base": "Vehicle ID must be a number",
+    "number.integer": "Vehicle ID must be an integer",
+    "number.positive": "Vehicle ID must be a positive number",
+  }),
+  amount: Joi.number().positive().optional().messages({
+    "number.base": "Amount must be a number",
+    "number.positive": "Amount must be a positive number",
+  }),
+  bill_date_bs: Joi.string().optional().messages({
+    "string.base": "Bill date (BS) must be a string",
+  }),
+  payment_method: Joi.string().valid("cash", "online").optional().messages({
+    "string.base": "Payment method must be a string",
+    "any.only": "Payment method must be either cash or online",
+  }),
+  bank_id: Joi.when("payment_method", {
+    is: "online",
+    then: Joi.number().integer().positive().required().messages({
+      "number.base": "Bank ID must be a number",
+      "number.integer": "Bank ID must be an integer",
+      "number.positive": "Bank ID must be a positive number",
+      "any.required": "Bank ID is required for online payments",
+    }),
+    otherwise: Joi.number().integer().positive().optional(),
+  }),
+  remarks: Joi.string().max(500).optional(),
+  branch_id: Joi.number().integer().positive().optional().messages({
+    "number.base": "Branch ID must be a number",
+    "number.integer": "Branch ID must be an integer",
+    "number.positive": "Branch ID must be a positive number",
+  }),
+  functional_year_id: Joi.number().integer().positive().optional().messages({
+    "number.base": "Functional Year ID must be a number",
+    "number.integer": "Functional Year ID must be an integer",
+    "number.positive": "Functional Year ID must be a positive number",
+  }),
+  status: Joi.number().valid(0, 1).optional(),
+}).min(1);
+
 module.exports = {
   createCashReceiptSchema,
   listCashReceiptSchema,
+  updateCashReceiptSchema,
 };

@@ -298,6 +298,9 @@ const updateCashInvoice = async (id, updateData) => {
       remarks,
       branch_id,
       status,
+      functional_year_id,
+      bank_id,
+      created_by,
     } = updateData;
 
     const cashInvoice = await CashInvoice.findByPk(id);
@@ -305,11 +308,19 @@ const updateCashInvoice = async (id, updateData) => {
       throw new NotFoundError("Cash invoice not found");
     }
 
-    // Check if vehicle exists (if vehicle_id is being updated)
+    const newVehicleId = vehicle_id || cashInvoice.vehicle_id;
+
+    // Ensure vehicle exists and get its ledger mapping
+    let vehicle = null;
     if (vehicle_id && vehicle_id !== cashInvoice.vehicle_id) {
-      const vehicle = await Vehicle.findByPk(vehicle_id, {
-        where: { status: 1 }
+      vehicle = await Vehicle.findByPk(vehicle_id, {
+        where: { status: 1 },
       });
+      if (!vehicle) {
+        throw new NotFoundError("Vehicle not found");
+      }
+    } else {
+      vehicle = await Vehicle.findByPk(newVehicleId);
       if (!vehicle) {
         throw new NotFoundError("Vehicle not found");
       }
@@ -317,21 +328,120 @@ const updateCashInvoice = async (id, updateData) => {
 
     // Convert BS date to AD if provided
     let bill_date = cashInvoice.bill_date;
+    let newBillDateBs = cashInvoice.bill_date_bs;
     if (bill_date_bs) {
       const nepaliCalendar = new Nepali_Calendar();
       bill_date = nepaliCalendar.BSToADConvert(bill_date_bs);
+      newBillDateBs = bill_date_bs;
     }
 
-    // Update cash invoice
+    // Determine effective payment method
+    const newPaymentMethod = payment_method
+      ? payment_method.toLowerCase()
+      : cashInvoice.payment_method;
+
+    // Fetch existing accounting entries for this invoice
+    const existingEntries = await AccountingTransactionDetail.findAll({
+      where: { comes_from: "CASH RECEIPT", table_id: id },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    if (!existingEntries || existingEntries.length < 2) {
+      throw new DatabaseError(
+        "Associated accounting entries not found for this cash invoice"
+      );
+    }
+
+    const debitRow = existingEntries.find((e) => parseFloat(e.debit) > 0);
+    const creditRow = existingEntries.find((e) => parseFloat(e.credit) > 0);
+
+    const txnId = debitRow?.transaction_id || creditRow?.transaction_id || null;
+    const voucherNumber =
+      debitRow?.voucher_number || creditRow?.voucher_number || cashInvoice.receipt_no;
+    const voucherType =
+      debitRow?.voucher_type || creditRow?.voucher_type || "Receipt Voucher";
+
+    // Determine debit ledger based on payment method
+    let debitLedgerId;
+    if (newPaymentMethod === "cash") {
+      const cashLedgerData = await ledgerServices.getAssociatedLedgerId(
+        "Cash in Hand"
+      );
+      debitLedgerId = cashLedgerData?.ledger_id;
+      if (!debitLedgerId) {
+        throw new ValidationError(
+          "Ledger mapping for 'Cash in Hand' is missing."
+        );
+      }
+    } else if (newPaymentMethod === "online") {
+      if (bank_id) {
+        debitLedgerId = bank_id;
+      } else if (debitRow && parseFloat(debitRow.debit) > 0) {
+        // Keep existing bank ledger if present
+        debitLedgerId = debitRow.ledger_id;
+      } else {
+        throw new ValidationError("bank_id is required for online payments");
+      }
+    } else {
+      throw new ValidationError("Invalid payment method");
+    }
+
+    const newAmount = amount !== undefined ? amount : cashInvoice.amount;
+    const newBranchId = branch_id || cashInvoice.branch_id;
+    const newFunctionalYearId = functional_year_id || cashInvoice.functional_year_id;
+    const newRemarks = remarks !== undefined ? remarks : cashInvoice.remarks;
+
+    // Update accounting entries
+    if (debitRow) {
+      await debitRow.update(
+        {
+          ledger_id: debitLedgerId,
+          credit: 0.0,
+          debit: newAmount,
+          voucher_date_ad: bill_date,
+          voucher_date_bs: newBillDateBs,
+          voucher_number: voucherNumber,
+          voucher_type: voucherType,
+          functional_year_id: newFunctionalYearId,
+          branch_id: newBranchId,
+          narration: `Receipt from vehicle ID ${newVehicleId}`,
+          updated_at: new Date(),
+        },
+        { transaction }
+      );
+    }
+
+    if (creditRow) {
+      await creditRow.update(
+        {
+          ledger_id: vehicle.ledgerId,
+          credit: newAmount,
+          debit: 0.0,
+          voucher_date_ad: bill_date,
+          voucher_date_bs: newBillDateBs,
+          voucher_number: voucherNumber,
+          voucher_type: voucherType,
+          functional_year_id: newFunctionalYearId,
+          branch_id: newBranchId,
+          narration: `Receipt from vehicle ID ${newVehicleId}`,
+          updated_at: new Date(),
+        },
+        { transaction }
+      );
+    }
+
+    // Update main cash invoice
     await cashInvoice.update(
       {
-        vehicle_id: vehicle_id || cashInvoice.vehicle_id,
+        vehicle_id: newVehicleId,
         bill_date: bill_date || cashInvoice.bill_date,
-        bill_date_bs: bill_date_bs || cashInvoice.bill_date_bs,
-        payment_method: payment_method ? payment_method.toLowerCase() : cashInvoice.payment_method,
-        amount: amount || cashInvoice.amount,
-        remarks: remarks !== undefined ? remarks : cashInvoice.remarks,
-        branch_id: branch_id || cashInvoice.branch_id,
+        bill_date_bs: newBillDateBs,
+        payment_method: newPaymentMethod,
+        amount: newAmount,
+        remarks: newRemarks,
+        branch_id: newBranchId,
+        functional_year_id: newFunctionalYearId,
         status: status !== undefined ? status : cashInvoice.status,
         updated_at: new Date(),
       },
