@@ -409,24 +409,175 @@ const updateInvoice = async (id, updateData) => {
       throw new NotFoundError("Invoice not found");
     }
 
-    // Update fields
-    const allowedFields = ["status", "payment_mode", "payment_date", "remarks"];
-    allowedFields.forEach((field) => {
-      if (updateData[field] !== undefined) {
-        invoice[field] = updateData[field];
-      }
-    });
+    // Extract updatable fields
+    const {
+      vehicle_id,
+      billing_title_id,
+      amount,
+      bill_date_bs,
+      expiry_date_bs,
+      payment_method,
+      bank_id,
+      receipt_no,
+      functional_year_id,
+      branch_id,
+      status,
+      payment_mode,
+      payment_date,
+      remarks,
+    } = updateData;
 
-    // If status is paid and payment_date is not provided, set to current date
-    if (updateData.status === "paid" && !invoice.payment_date) {
-      invoice.payment_date = new Date();
+    // Validate related entities if changed
+    let vehicle = null;
+    const newVehicleId = vehicle_id || invoice.vehicle_id;
+    if (vehicle_id && vehicle_id !== invoice.vehicle_id) {
+      vehicle = await Vehicle.findByPk(vehicle_id);
+      if (!vehicle) throw new NotFoundError("Vehicle not found");
+    } else {
+      vehicle = await Vehicle.findByPk(newVehicleId);
+      if (!vehicle) throw new NotFoundError("Vehicle not found");
     }
 
-    await invoice.save({ transaction });
+    if (billing_title_id && billing_title_id !== invoice.billing_title_id) {
+      const billing = await BillingTitleInfo.findByPk(billing_title_id);
+      if (!billing) throw new NotFoundError("Billing title not found");
+    }
+
+    // Convert BS dates if provided
+    let newInvoiceDate = invoice.invoice_date;
+    let newInvoiceDateBs = invoice.invoice_date_bs;
+    let newExpiryDate = invoice.expiry_date;
+    let newExpiryDateBs = invoice.expire_date_bs;
+    const np = new Nepali_Calendar();
+    if (bill_date_bs) {
+      newInvoiceDateBs = bill_date_bs;
+      newInvoiceDate = np.BSToADConvert(bill_date_bs);
+    }
+    if (expiry_date_bs) {
+      newExpiryDateBs = expiry_date_bs;
+      newExpiryDate = np.BSToADConvert(expiry_date_bs);
+    }
+
+    // Determine payment method/mode changes
+    const newPaymentMethod = (payment_method || invoice.payment_mode || payment_mode || "").toString().toLowerCase();
+    const effectivePaymentMode = newPaymentMethod || invoice.payment_mode;
+
+    // Update accounting entries for this invoice (comes_from = 'SALES ENTRY')
+    const entries = await AccountingTransactionDetail.findAll({
+      where: { comes_from: "SALES ENTRY", table_id: id },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    if (!entries || entries.length < 2) {
+      // In some cases, invoices could be created without entries; we won't hard fail update
+      // but will proceed updating invoice only.
+    } else {
+      // Identify debit and credit rows
+      const debitRow = entries.find((e) => parseFloat(e.debit) > 0);
+      const creditRow = entries.find((e) => parseFloat(e.credit) > 0);
+
+      const voucherNumber = receipt_no || debitRow?.voucher_number || creditRow?.voucher_number || invoice.receipt_no;
+      const voucherType = debitRow?.voucher_type || creditRow?.voucher_type || "Renew Voucher";
+
+      // Recompute ledgers based on payment mode
+      let debitLedgerId = debitRow?.ledger_id;
+      let creditLedgerId = creditRow?.ledger_id;
+
+      // Resolve sales ledger mapping
+      const salesMap = await LedgerInfo.findOne({ where: { status: 1, ledgername: { [Op.like]: "%Sales%" } } });
+      const salesLedgerId = salesMap?.id;
+
+      const amountVal = amount !== undefined ? amount : Number(invoice.total_amount);
+      const functionalYearId = functional_year_id || debitRow?.functional_year_id || invoice.functional_year_id;
+      const branchId = branch_id || debitRow?.branch_id || invoice.branch_id;
+
+      if (effectivePaymentMode === "cash") {
+        // Debit: Cash in Hand, Credit: Sales
+        const { ledgerServices } = require("./index");
+        const cashLedgerData = await ledgerServices.getAssociatedLedgerId("Cash in Hand");
+        if (!cashLedgerData?.ledger_id) throw new ValidationError("Ledger mapping for 'Cash in Hand' is missing.");
+        debitLedgerId = cashLedgerData.ledger_id;
+        creditLedgerId = salesLedgerId || creditLedgerId;
+      } else if (effectivePaymentMode === "credit") {
+        // Debit: Party (vehicle ledger), Credit: Sales
+        debitLedgerId = vehicle.ledgerId;
+        creditLedgerId = salesLedgerId || creditLedgerId;
+      } else if (effectivePaymentMode === "bank_transfer" || effectivePaymentMode === "online" || effectivePaymentMode === "direct bank transfer") {
+        // Debit: Bank, Credit: Sales
+        if (!bank_id && !(debitRow && parseFloat(debitRow.debit) > 0)) {
+          throw new ValidationError("bank_id is required for bank/online payments");
+        }
+        debitLedgerId = bank_id || debitRow.ledger_id;
+        creditLedgerId = salesLedgerId || creditLedgerId;
+      }
+
+      // Update entries
+      if (debitRow) {
+        await debitRow.update(
+          {
+            ledger_id: debitLedgerId,
+            debit: amountVal,
+            credit: 0.0,
+            voucher_date_ad: newInvoiceDate,
+            voucher_date_bs: newInvoiceDateBs,
+            voucher_number: voucherNumber,
+            voucher_type: voucherType,
+            functional_year_id: functionalYearId,
+            branch_id: branchId,
+            narration: `Renew invoice for vehicle ${newVehicleId}`,
+            updated_at: new Date(),
+          },
+          { transaction }
+        );
+      }
+
+      if (creditRow) {
+        await creditRow.update(
+          {
+            ledger_id: creditLedgerId,
+            credit: amountVal,
+            debit: 0.0,
+            voucher_date_ad: newInvoiceDate,
+            voucher_date_bs: newInvoiceDateBs,
+            voucher_number: voucherNumber,
+            voucher_type: voucherType,
+            functional_year_id: functionalYearId,
+            branch_id: branchId,
+            narration: `Renew invoice for vehicle ${newVehicleId}`,
+            updated_at: new Date(),
+          },
+          { transaction }
+        );
+      }
+    }
+
+    // Update main invoice
+    await invoice.update(
+      {
+        vehicle_id: newVehicleId,
+        billing_title_id: billing_title_id || invoice.billing_title_id,
+        rate: amount !== undefined ? amount : invoice.rate,
+        total_amount: amount !== undefined ? amount : invoice.total_amount,
+        invoice_date: newInvoiceDate,
+        invoice_date_bs: newInvoiceDateBs,
+        expiry_date: newExpiryDate,
+        expire_date_bs: newExpiryDateBs,
+        payment_mode: effectivePaymentMode,
+        bank_id: bank_id !== undefined ? bank_id : invoice.bank_id,
+        receipt_no: receipt_no || invoice.receipt_no,
+        status: status !== undefined ? status : invoice.status,
+        payment_date: payment_date !== undefined ? payment_date : invoice.payment_date,
+        remarks: remarks !== undefined ? remarks : invoice.remarks,
+        updated_at: new Date(),
+      },
+      { transaction }
+    );
+
     await transaction.commit();
 
     // Return updated invoice with associations
-    const updatedInvoice = await this.getInvoiceById(id);
+    const updatedInvoice = await module.exports.getInvoiceById(id);
     return updatedInvoice;
   } catch (error) {
     await transaction.rollback();

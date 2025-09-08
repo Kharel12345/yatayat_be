@@ -73,6 +73,7 @@ const createInvoiceSchema = Joi.object({
 });
 
 const updateInvoiceSchema = Joi.object({
+  // Existing fields
   status: Joi.string()
     .valid("pending", "paid", "overdue", "cancelled")
     .optional()
@@ -95,7 +96,59 @@ const updateInvoiceSchema = Joi.object({
     "string.base": "Remarks must be a string",
     "string.max": "Remarks cannot exceed 500 characters",
   }),
-});
+
+  // Core updatable fields to align with create
+  vehicle_id: Joi.number().integer().positive().optional().messages({
+    "number.base": "Vehicle ID must be a number",
+    "number.integer": "Vehicle ID must be an integer",
+    "number.positive": "Vehicle ID must be a positive number",
+  }),
+  billing_title_id: Joi.number().integer().positive().optional().messages({
+    "number.base": "Billing Title ID must be a number",
+    "number.integer": "Billing Title ID must be an integer",
+    "number.positive": "Billing Title ID must be a positive number",
+  }),
+  amount: Joi.number().positive().optional().messages({
+    "number.base": "Amount must be a number",
+    "number.positive": "Amount must be a positive number",
+  }),
+  bill_date_bs: Joi.string().optional().messages({
+    "string.base": "Bill date (BS) must be a string",
+  }),
+  expiry_date_bs: Joi.string().optional().messages({
+    "string.base": "Expiry date (BS) must be a string",
+  }),
+  payment_method: Joi.string()
+    .valid("cash", "credit", "bank_transfer", "online", "cheque", "direct bank transfer")
+    .optional()
+    .messages({
+      "string.base": "Payment method must be a string",
+    }),
+  bank_id: Joi.when("payment_method", {
+    is: Joi.string().valid("bank_transfer", "online", "direct bank transfer"),
+    then: Joi.number().integer().positive().required().messages({
+      "number.base": "Bank ID must be a number",
+      "number.integer": "Bank ID must be an integer",
+      "number.positive": "Bank ID must be a positive number",
+      "any.required": "Bank ID is required for bank/online payments",
+    }),
+    otherwise: Joi.number().integer().positive().optional(),
+  }),
+  receipt_no: Joi.string().max(500).optional().messages({
+    "string.base": "Receipt number must be a string",
+    "string.max": "Receipt number cannot exceed 500 characters",
+  }),
+  functional_year_id: Joi.number().integer().positive().optional().messages({
+    "number.base": "Functional Year ID must be a number",
+    "number.integer": "Functional Year ID must be an integer",
+    "number.positive": "Functional Year ID must be a positive number",
+  }),
+  branch_id: Joi.number().integer().positive().optional().messages({
+    "number.base": "Branch ID must be a number",
+    "number.integer": "Branch ID must be an integer",
+    "number.positive": "Branch ID must be a positive number",
+  }),
+}).min(1);
 
 const getInvoicesSchema = Joi.object({
   page: Joi.number().integer().positive().optional().default(1).messages({
