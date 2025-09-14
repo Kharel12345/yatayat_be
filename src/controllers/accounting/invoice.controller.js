@@ -18,6 +18,8 @@ const { ValidationError } = require("../../utils/error");
 
 const Nepali_Calendar = require("../../helpers/nepaliCalendar");
 const { getTransactionId } = require("../../utils/index_info");
+const { getCurrentDateTime } = require("../../helpers/date");
+const moment = require("moment");
 
 // Create a new invoice
 const createInvoice = async (req, res, next) => {
@@ -243,11 +245,21 @@ const getReceiptNo = async (req, res, next) => {
 
 const getVehicleExpiryDate = async (req, res, next) => {
   try {
+
+    const calendar = new Nepali_Calendar();
+
+    const { billing_title_id, vehicle_id } = req.query;
+    if (!billing_title_id || !vehicle_id) {
+      return res.status(200).json({
+        success: false,
+        message: "billing_title_id and vehicle_id are required",
+      });
+    }
+
     const lastExpiry = await invoiceServices.getVehicleExpiryDate(req.query);
-    console.log("last expiry", lastExpiry);
+    console.log("lastExpiry", lastExpiry);
 
     let dateOfExpiry = null;
-    let calendar = new Nepali_Calendar();
 
     // Fetch billing title mapping
     const billingTitleMapped =
@@ -261,13 +273,15 @@ const getVehicleExpiryDate = async (req, res, next) => {
     // use dayjs to handle date logic
     let baseDate = lastExpiry?.expiry_date
       ? lastExpiry.expiry_date
-      : calendar.ADToBsConvert(new Date(), "YYYY-MM-DD"); // if no last expiry → today
+      : getCurrentDateTime(); // if no last expiry → today
 
     if (billing_label === "yearly" || billing_label === "both") {
-      dateOfExpiry = baseDate.add(1, "year").toDate();
+      dateOfExpiry = moment(baseDate).add(1, "year").toDate();
     } else if (billing_label === "monthly") {
-      dateOfExpiry = baseDate.add(1, "month").toDate();
+      dateOfExpiry = moment(baseDate).add(1, "month").toDate();
     }
+
+    dateOfExpiry = calendar.ADToBsConvert(moment(dateOfExpiry).format("YYYY-MM-DD"));
 
     return res.status(200).json({
       success: true,
