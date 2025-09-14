@@ -1,6 +1,6 @@
 // routes/billingTitleInfo.routes.js
 const express = require("express");
-const { individualLedgerReport, vehicleExpiryReport } = require("../../controllers/report");
+const { individualLedgerReport, vehicleExpiryReport, dashboardReport } = require("../../controllers/report");
 const auth = require("../../middlewares/auth");
 
 const router = express.Router();
@@ -18,6 +18,13 @@ router
   .get(
     auth,
     vehicleExpiryReport.getVehicleExpiryReport
+  );
+
+router
+  .route("/getdashboardreport")
+  .get(
+    auth,
+    dashboardReport.getDashboardReport
   );
 
 module.exports = router;
