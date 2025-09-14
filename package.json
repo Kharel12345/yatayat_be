@@ -9,7 +9,7 @@
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:seed": "sequelize-cli db:seed:all",
-    "db:backup": "mysqldump -u root -pP@ssw0rd yatayat_system > backup_$(date +%Y%m%d_%H%M%S).sql",
+    "db:backup": "mysqldump -u rayumabh_admin -p x&OAj_,4P?H^f@*0 rayumabh_yatayat > backup_$(date +%Y%m%d_%H%M%S).sql",
     "db:deploy:check": "NODE_ENV=production node -e \"require('./src/config/database')\"",
     "deploy:preflight": "npm run db:backup && npm run db:migrate",
     "deploy": "npm run deploy:preflight && NODE_ENV=production pm2 startOrRestart ecosystem.config.js --env production"
