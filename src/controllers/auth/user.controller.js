@@ -268,6 +268,12 @@ const getPermissionDetailByUserId = async (req, res, next) => {
 
 const deleteUser = async (req, res, next) => {
   try {
+    if (req.params.id == 1) {
+      return res.status(400).json({
+        status: false,
+        message: "You can not delete admin user!!!"
+      });
+    }
     const deleted = await userServices.deleteUser(req.params.id);
     if (!deleted) return res.status(404).json({
       status: false,

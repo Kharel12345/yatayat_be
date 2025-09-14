@@ -76,7 +76,7 @@ const getUserPagination = async (limit, offset, status, name, user_id) => {
   try {
     const where = {};
     if (status !== undefined) where.status = status; else where.status = 1;
-    if (user_id !== undefined) where.created_by = user_id;
+    // if (user_id !== undefined) where.created_by = user_id;
     if (name) where.name = { [Op.like]: `${name}%` };
 
     const { rows, count } = await User.findAndCountAll({
