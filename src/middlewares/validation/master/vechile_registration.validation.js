@@ -4,7 +4,7 @@ const fs = require("fs");
 const { cleanupUploadedFiles } = require("../../../utils/fileCleanup");
 
 const driverSchema = Joi.object({
-  driverName: Joi.string().required(),
+  driverName: Joi.string().required().allow(""),
   registrationNumber: Joi.string().allow(""),
   panNo: Joi.string().allow(""),
   licenseNo: Joi.string().allow(""),
@@ -34,6 +34,7 @@ const vehicleSchema = Joi.object({
   address: Joi.string().required(),
   panNo: Joi.string().allow(""),
   membershipNo: Joi.string().allow(""),
+  contact: Joi.string().allow(""),
   photo: Joi.string().allow(""),
   billBookPhoto: Joi.string().allow(""),
   licensePaper: Joi.string().allow(""),

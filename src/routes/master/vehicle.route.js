@@ -17,7 +17,7 @@ router.post(
     { name: "billBookPhoto", maxCount: 1 },
     { name: "licensePaper", maxCount: 1 },
     { name: "insurancePaper", maxCount: 1 },
-    { name: "rootPermit", maxCount: 1 },
+    { name: "routePermit", maxCount: 1 },
     { name: "jachPass", maxCount: 1 },
     { name: "operatorPhoto", maxCount: 1 },
     { name: "helperPhoto", maxCount: 1 },

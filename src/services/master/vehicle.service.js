@@ -273,11 +273,39 @@ const updateVehicle = async (id, data) => {
     );
 
     // --- Step 3: Handle Operator ---
-    if (operator && Object.values(operator).some((v) => v && v.trim() !== "")) {
+    // if (operator && Object.values(operator).some((v) => v && v?.trim() !== "")) {
+    //   const existingOperator = await Operator.findOne({
+    //     where: { vehicleId: id },
+    //     transaction,
+    //   });
+    //   if (existingOperator) {
+    //     await existingOperator.update(
+    //       { ...operator, status: 1 },
+    //       { transaction }
+    //     );
+    //   } else {
+    //     await Operator.create(
+    //       { ...operator, vehicleId: id, status: 1 },
+    //       { transaction }
+    //     );
+    //   }
+    // } else {
+    //   await Operator.update(
+    //     { status: 0 },
+    //     { where: { vehicleId: id }, transaction }
+    //   );
+    // }
+    if (
+      operator &&
+      Object.values(operator).some(
+        (v) => typeof v === "string" && v.trim() !== ""
+      )
+    ) {
       const existingOperator = await Operator.findOne({
         where: { vehicleId: id },
         transaction,
       });
+
       if (existingOperator) {
         await existingOperator.update(
           { ...operator, status: 1 },
@@ -296,12 +324,38 @@ const updateVehicle = async (id, data) => {
       );
     }
 
+
     // --- Step 4: Handle Helper ---
-    if (helper && Object.values(helper).some((v) => v && v.trim() !== "")) {
+    // if (helper && Object.values(helper).some((v) => v && v.trim() !== "")) {
+    //   const existingHelper = await Helper.findOne({
+    //     where: { vehicleId: id },
+    //     transaction,
+    //   });
+    //   if (existingHelper) {
+    //     await existingHelper.update({ ...helper, status: 1 }, { transaction });
+    //   } else {
+    //     await Helper.create(
+    //       { ...helper, vehicleId: id, status: 1 },
+    //       { transaction }
+    //     );
+    //   }
+    // } else {
+    //   await Helper.update(
+    //     { status: 0 },
+    //     { where: { vehicleId: id }, transaction }
+    //   );
+    // }
+    if (
+      helper &&
+      Object.values(helper).some(
+        (v) => typeof v === "string" && v.trim() !== ""
+      )
+    ) {
       const existingHelper = await Helper.findOne({
         where: { vehicleId: id },
         transaction,
       });
+
       if (existingHelper) {
         await existingHelper.update({ ...helper, status: 1 }, { transaction });
       } else {
@@ -317,10 +371,31 @@ const updateVehicle = async (id, data) => {
       );
     }
 
+
     // --- Step 5: Handle Drivers ---
+    // if (Array.isArray(drivers)) {
+    //   const validDrivers = drivers
+    //     .filter((d) => Object.values(d).some((v) => v && v.trim() !== ""))
+    //     .map((d) => ({ ...d, vehicleId: id, status: 1 }));
+
+    //   // Mark all drivers inactive first
+    //   await Driver.update(
+    //     { status: 0 },
+    //     { where: { vehicleId: id }, transaction }
+    //   );
+
+    //   // Add new active drivers if present
+    //   if (validDrivers.length > 0) {
+    //     await Driver.bulkCreate(validDrivers, { transaction });
+    //   }
+    // }
     if (Array.isArray(drivers)) {
       const validDrivers = drivers
-        .filter((d) => Object.values(d).some((v) => v && v.trim() !== ""))
+        .filter((d) =>
+          Object.values(d).some(
+            (v) => typeof v === "string" && v.trim() !== ""
+          )
+        )
         .map((d) => ({ ...d, vehicleId: id, status: 1 }));
 
       // Mark all drivers inactive first
@@ -334,6 +409,7 @@ const updateVehicle = async (id, data) => {
         await Driver.bulkCreate(validDrivers, { transaction });
       }
     }
+
 
     // Commit the transaction if all steps succeed
     await transaction.commit();

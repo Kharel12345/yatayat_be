@@ -8,6 +8,7 @@ const Vehicle = sequelize.define(
     vehicleNo: { type: DataTypes.STRING, allowNull: false },
     ownerName: { type: DataTypes.STRING, allowNull: false },
     address: { type: DataTypes.STRING, allowNull: false },
+    contact: { type: DataTypes.STRING, allowNull: true },
     panNo: { type: DataTypes.STRING, allowNull: true },
     membershipNo: { type: DataTypes.STRING, allowNull: true },
     photo: { type: DataTypes.STRING, allowNull: true },

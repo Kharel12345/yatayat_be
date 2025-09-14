@@ -19,7 +19,7 @@ const createVehicle = async (req, res, next) => {
       billbookphoto: req.files?.billBookPhoto?.[0]?.filename || null, // vehicle photo
       licensePaper: req.files?.licensePaper?.[0]?.filename || null,
       insurancePaper: req.files?.insurancePaper?.[0]?.filename || null,
-      routePermit: req.files?.rootPermit?.[0]?.filename || null,
+      routePermit: req.files?.routePermit?.[0]?.filename || null,
       jachPass: req.files?.jachPass?.[0]?.filename || null,
     };
 
@@ -118,6 +118,7 @@ const updateVehicle = async (req, res, next) => {
   let allNewFilesToCleanup = [];
   
   try {
+
     // Step 1: Get existing vehicle data with all related records
     const existingVehicle = await vehicleService.getVehicleById(req.params.id);
     if (!existingVehicle) {
