@@ -5,34 +5,25 @@ const { Op } = require("sequelize");
 
 const getVehicleExpiryReport = async (toDate) => {
   try {
-    // If no toDate provided, use today's date
-    const targetDate = toDate ? new Date(toDate) : new Date();
 
-    // Set time to end of day for inclusive comparison
-    targetDate.setHours(23, 59, 59, 999);
+    // Convert YYYY-MM-DD string → Date object
+    const dateObj = new Date(`${toDate}T23:59:59`); // include the whole day
 
     const result = await Invoice.findAll({
       where: {
-        status: { [Op.in]: ["pending", "paid", "overdue"] }, // Exclude cancelled invoices
-        expiry_date: { [Op.lte]: targetDate }, // Vehicles expiring on or before the target date
+        status: 1,
+        expiry_date: {
+          [Op.lte]: dateObj, // all expiry_date <= toDate end of day
+        },
       },
       include: [
-        {
-          model: Vehicle,
-          as: "vehicleInfo",
-        },
-        {
-          model: BillingTitleInfo,
-          as: "billingInfo",
-        },
+        { model: Vehicle, as: "vehicleInfo" },
+        { model: BillingTitleInfo, as: "billingInfo" },
       ],
-      order: [
-        ["expiry_date", "ASC"], // Show most urgent expiries first
-      ],
-      raw: false,
+      order: [["expiry_date", "ASC"]],
+      group: ["vehicle_id"],
     });
 
-    // Transform the data to match the frontend requirements
     const transformedData = result.map((invoice) => {
       const vehicle = invoice.vehicleInfo;
       const billing = invoice.billingInfo;
@@ -44,10 +35,13 @@ const getVehicleExpiryReport = async (toDate) => {
         address: vehicle?.address || "N/A",
         panNo: vehicle?.panNo || "N/A",
         membershipNo: vehicle?.membershipNo || "N/A",
-        // contactNumber: "N/A", // This field doesn't exist in current schema
-        expiryDate: invoice.expiry_date ? invoice.expiry_date.toISOString().split('T')[0] : "N/A",
+        expiryDate: invoice.expiry_date
+          ? invoice.expiry_date.toISOString().split("T")[0]
+          : "N/A",
         expiryDateBS: invoice.expire_date_bs || "N/A",
-        lastRenewDate: invoice.invoice_date ? invoice.invoice_date.toISOString().split('T')[0] : "N/A",
+        lastRenewDate: invoice.invoice_date
+          ? invoice.invoice_date.toISOString().split("T")[0]
+          : "N/A",
         lastRenewDateBS: invoice.invoice_date_bs || "N/A",
         billingTitle: billing?.billing_title || "N/A",
         invoiceNumber: invoice.invoice_number || "N/A",

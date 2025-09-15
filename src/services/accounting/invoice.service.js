@@ -702,8 +702,8 @@ const getVehicleExpiryDate = async (data) => {
   try {
     const result = await Invoice.findOne({
       where: {
-        // vehicle_id: data.vehicle_id,
-        billing_title_id: data.billing_title_id,
+        vehicle_id: data.vehicle_id,
+        status: 1,
       },
       order: [["created_at", "DESC"]],
     });
