@@ -79,17 +79,18 @@ const getVehiclesPaginated = async (req, res, next) => {
       page = 1,
       limit = 10,
       organization,
-      vehicle_no,
-      date_bs,
-      from_date_bs,
-      to_date_bs,
+      vehicleNo,
+      fromDate,
+      toDate,
+      branch
     } = req.query;
+
     const result = await vehicleService.getVehiclesPaginated(page, limit, {
       organization,
-      vehicle_no,
-      date_bs,
-      from_date_bs,
-      to_date_bs,
+      vehicleNo,
+      fromDate,
+      toDate,
+      branch
     });
     res.json(SUCCESS_API_FETCH(result));
   } catch (error) {

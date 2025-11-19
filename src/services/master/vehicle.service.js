@@ -159,45 +159,44 @@ const getVehiclesPaginated = async (page = 1, limit = 10, filters = {}) => {
   const offset = (page - 1) * limit;
   const where = { status: 1 };
 
-  // Organization filter (partial match)
+  // Organization filter
   if (filters.organization) {
     where.organization = { [Op.like]: `%${filters.organization}%` };
   }
 
-  // Vehicle number filter (supports both vehicleNo and registration_no)
-  if (filters.vehicle_no) {
-    const vehicleLike = { [Op.like]: `%${filters.vehicle_no}%` };
+  // Vehicle number filter
+  if (filters.vehicleNo) {
+    const vehicleLike = { [Op.like]: `%${filters.vehicleNo}%` };
     where[Op.or] = [
-      { vehicleNo: vehicleLike },
-      { registration_no: vehicleLike },
+      { vehicleNo: vehicleLike }
     ];
   }
 
-  // Date filters (BS -> AD). Using registrationDate if available; otherwise created_at
-  const calendar = new Nepali_Calendar();
-  const hasRegistrationDate = !!Vehicle.rawAttributes?.registrationDate;
-  const dateField = hasRegistrationDate ? "registrationDate" : "created_at";
+  // Branch filter (correct field name)
+  if (filters.branch) {
+    where.branchId = filters.branch;
+  }
 
-  if (filters.date_bs) {
-    const ad = calendar.BSToADConvert(filters.date_bs);
-    const start = new Date(ad);
-    const end = new Date(ad);
-    end.setHours(23, 59, 59, 999);
-    where[dateField] = { [Op.between]: [start, end] };
-  } else if (filters.from_date_bs || filters.to_date_bs) {
-    const startAd = filters.from_date_bs
-      ? new Date(calendar.BSToADConvert(filters.from_date_bs))
+  // Date Filters BS -> AD conversion
+  const calendar = new Nepali_Calendar();
+  const dateField = "registrationDate";
+
+  if (filters.fromDate || filters.toDate) {
+    const startAd = filters.fromDate
+      ? new Date(calendar.BSToADConvert(filters.fromDate))
       : null;
-    const endAd = filters.to_date_bs
-      ? new Date(calendar.BSToADConvert(filters.to_date_bs))
+
+    const endAd = filters.toDate
+      ? new Date(calendar.BSToADConvert(filters.toDate))
       : null;
+
+    if (endAd) endAd.setHours(23, 59, 59, 999);
+
     if (startAd && endAd) {
-      endAd.setHours(23, 59, 59, 999);
       where[dateField] = { [Op.between]: [startAd, endAd] };
     } else if (startAd) {
       where[dateField] = { [Op.gte]: startAd };
     } else if (endAd) {
-      endAd.setHours(23, 59, 59, 999);
       where[dateField] = { [Op.lte]: endAd };
     }
   }
@@ -205,14 +204,9 @@ const getVehiclesPaginated = async (page = 1, limit = 10, filters = {}) => {
   const data = await Vehicle.findAndCountAll({
     where,
     include: [
-      {
-        model: Operator,
-        as: "operator",
-        where: { status: 1 },
-        required: false,
-      },
-      { model: Helper, as: "helper", where: { status: 1 }, required: false },
-      { model: Driver, as: "drivers", where: { status: 1 }, required: false },
+      { model: Operator, as: "operator", required: false },
+      { model: Helper, as: "helper", required: false },
+      { model: Driver, as: "drivers", required: false },
     ],
     limit: parseInt(limit),
     offset: parseInt(offset),
