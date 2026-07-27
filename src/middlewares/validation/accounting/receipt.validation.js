@@ -1,11 +1,22 @@
 const Joi = require("joi");
 
-const createCashReceiptSchema = Joi.object({
-  vehicle_id: Joi.number().integer().positive().required().messages({
-    "number.base": "Vehicle ID must be a number",
-    "number.integer": "Vehicle ID must be an integer",
-    "number.positive": "Vehicle ID must be a positive number",
-    "any.required": "Vehicle ID is required",
+const createReceiptSchema = Joi.object({
+  payer_name: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Payer name must be a string",
+    "string.max": "Payer name must not exceed 255 characters",
+  }),
+  payer_address: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Payer address must be a string",
+    "string.max": "Payer address must not exceed 255 characters",
+  }),
+  bill_title: Joi.string().max(255).required().messages({
+    "string.base": "Bill title must be a string",
+    "string.max": "Bill title must not exceed 255 characters",
+    "any.required": "Bill title is required",
+  }),
+  vehicle_no: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Vehicle number must be a string",
+    "string.max": "Vehicle number must not exceed 255 characters",
   }),
   amount: Joi.number().positive().required().messages({
     "number.base": "Amount must be a number",
@@ -31,8 +42,7 @@ const createCashReceiptSchema = Joi.object({
     }),
     otherwise: Joi.forbidden(),
   }),
-  remarks: Joi.string().max(500).optional(),
-  qrremarks: Joi.string().max(500).optional(),
+  remarks: Joi.string().max(500).optional().allow(""),
   branch_id: Joi.number().integer().positive().required().messages({
     "number.base": "Branch ID must be a number",
     "number.integer": "Branch ID must be an integer",
@@ -47,7 +57,7 @@ const createCashReceiptSchema = Joi.object({
   }),
 });
 
-const listCashReceiptSchema = Joi.object({
+const listReceiptSchema = Joi.object({
   page: Joi.number().integer().positive().optional().default(1),
   limit: Joi.number().integer().positive().max(100).optional().default(10),
   search: Joi.string().allow("").optional().default(""),
@@ -57,11 +67,22 @@ const listCashReceiptSchema = Joi.object({
   functional_year_id: Joi.number().integer().positive().optional(),
 });
 
-const updateCashReceiptSchema = Joi.object({
-  vehicle_id: Joi.number().integer().positive().optional().messages({
-    "number.base": "Vehicle ID must be a number",
-    "number.integer": "Vehicle ID must be an integer",
-    "number.positive": "Vehicle ID must be a positive number",
+const updateReceiptSchema = Joi.object({
+  payer_name: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Payer name must be a string",
+    "string.max": "Payer name must not exceed 255 characters",
+  }),
+  payer_address: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Payer address must be a string",
+    "string.max": "Payer address must not exceed 255 characters",
+  }),
+  bill_title: Joi.string().max(255).optional().messages({
+    "string.base": "Bill title must be a string",
+    "string.max": "Bill title must not exceed 255 characters",
+  }),
+  vehicle_no: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Vehicle number must be a string",
+    "string.max": "Vehicle number must not exceed 255 characters",
   }),
   amount: Joi.number().positive().optional().messages({
     "number.base": "Amount must be a number",
@@ -84,7 +105,7 @@ const updateCashReceiptSchema = Joi.object({
     }),
     otherwise: Joi.number().integer().positive().optional(),
   }),
-  remarks: Joi.string().max(500).optional(),
+  remarks: Joi.string().max(500).optional().allow(""),
   branch_id: Joi.number().integer().positive().optional().messages({
     "number.base": "Branch ID must be a number",
     "number.integer": "Branch ID must be an integer",
@@ -99,7 +120,7 @@ const updateCashReceiptSchema = Joi.object({
 }).min(1);
 
 module.exports = {
-  createCashReceiptSchema,
-  listCashReceiptSchema,
-  updateCashReceiptSchema,
+  createReceiptSchema,
+  listReceiptSchema,
+  updateReceiptSchema,
 };

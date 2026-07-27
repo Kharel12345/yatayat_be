@@ -1,11 +1,13 @@
 const Joi = require("joi");
 
 const createCashReceiptSchema = Joi.object({
-  vehicle_id: Joi.number().integer().positive().required().messages({
-    "number.base": "Vehicle ID must be a number",
-    "number.integer": "Vehicle ID must be an integer",
-    "number.positive": "Vehicle ID must be a positive number",
-    "any.required": "Vehicle ID is required",
+  payer_name: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Payer name must be a string",
+    "string.max": "Payer name must not exceed 255 characters",
+  }),
+  payer_address: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Payer address must be a string",
+    "string.max": "Payer address must not exceed 255 characters",
   }),
   amount: Joi.number().positive().required().messages({
     "number.base": "Amount must be a number",
@@ -31,8 +33,7 @@ const createCashReceiptSchema = Joi.object({
     }),
     otherwise: Joi.forbidden(),
   }),
-  remarks: Joi.string().max(500).optional(),
-  qrremarks: Joi.string().max(500).optional(),
+  remarks: Joi.string().max(500).optional().allow(""),
   branch_id: Joi.number().integer().positive().required().messages({
     "number.base": "Branch ID must be a number",
     "number.integer": "Branch ID must be an integer",
@@ -58,10 +59,13 @@ const listCashReceiptSchema = Joi.object({
 });
 
 const updateCashReceiptSchema = Joi.object({
-  vehicle_id: Joi.number().integer().positive().optional().messages({
-    "number.base": "Vehicle ID must be a number",
-    "number.integer": "Vehicle ID must be an integer",
-    "number.positive": "Vehicle ID must be a positive number",
+  payer_name: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Payer name must be a string",
+    "string.max": "Payer name must not exceed 255 characters",
+  }),
+  payer_address: Joi.string().max(255).allow("").optional().messages({
+    "string.base": "Payer address must be a string",
+    "string.max": "Payer address must not exceed 255 characters",
   }),
   amount: Joi.number().positive().optional().messages({
     "number.base": "Amount must be a number",
@@ -84,7 +88,7 @@ const updateCashReceiptSchema = Joi.object({
     }),
     otherwise: Joi.number().integer().positive().optional(),
   }),
-  remarks: Joi.string().max(500).optional(),
+  remarks: Joi.string().max(500).optional().allow(""),
   branch_id: Joi.number().integer().positive().optional().messages({
     "number.base": "Branch ID must be a number",
     "number.integer": "Branch ID must be an integer",

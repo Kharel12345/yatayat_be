@@ -280,7 +280,15 @@ const getCashInvoiceById = async (id) => {
       throw new NotFoundError("Cash invoice not found");
     }
 
-    return cashInvoice;
+    const transactionDetails = await AccountingTransactionDetail.findAll({
+      where: { table_id: id, comes_from: "CASH RECEIPT" },
+      attributes: ["id", "transaction_id", "ledger_id", "credit", "debit"],
+    });
+
+    const cashInvoiceData = cashInvoice.toJSON();
+    cashInvoiceData.transactionDetails = transactionDetails;
+
+    return cashInvoiceData;
   } catch (error) {
     throw error;
   }

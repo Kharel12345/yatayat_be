@@ -69,7 +69,7 @@ const createInvoice = async (invoiceData) => {
     // Create invoice
     const invoice = await Invoice.create(
       {
-        invoice_number: `INV-${Date.now()}`,
+        invoice_number: receipt_no,
         vehicle_id,
         billing_title_id,
         rate: amount,
