@@ -10,6 +10,7 @@ const BillingTitleInfo=require('./billing_title.model');
 const BillingTitleMappingInfo=require('./billing_title_mappingInfo');
 const VehicleInvoice = require("./vehicle_invoice.model");
 const VehicleInvoiceItem = require("./vehicle_invoice_item.model");
+const messageSettingInfo = require("./message_setting.model")
 
 module.exports = {
   FunctionalYear,
@@ -24,4 +25,5 @@ module.exports = {
   BillingTitleMappingInfo,
   VehicleInvoice,
   VehicleInvoiceItem,
+  messageSettingInfo
 };

@@ -11,12 +11,11 @@ const createInvoiceSchema = Joi.object({
     "number.positive": "Vehicle ID must be a positive number",
     "any.required": "Vehicle ID is required",
   }),
-    amount: Joi.number().integer().positive().required().messages({
-    "number.base": "Billing Title ID must be a number",
-    "number.integer": "Billing Title ID must be an integer",
-    "number.positive": "Billing Title ID must be a positive number",
-    "any.required": "Billing Title ID is required",
-  }),
+    amount: Joi.number().positive().required().messages({
+  "number.base": "Amount must be a number",
+  "number.positive": "Amount must be a positive number",
+  "any.required": "Amount is required",
+}),
   billing_title_id: Joi.number().integer().positive().required().messages({
     "number.base": "Billing Title ID must be a number",
     "number.integer": "Billing Title ID must be an integer",
@@ -69,7 +68,13 @@ const createInvoiceSchema = Joi.object({
     "number.integer": "Branch ID must be an integer",
     "number.positive": "Branch ID must be a positive number",
     "any.required": "Branch ID is required",
-  })
+  }),
+  //discount part
+  discount: Joi.number().min(0).max(100).optional().messages({
+  "number.base": "Discount must be a number",
+  "number.min": "Discount cannot be negative",
+  "number.max": "Discount cannot exceed 100",
+}),
 });
 
 const updateInvoiceSchema = Joi.object({
@@ -148,6 +153,12 @@ const updateInvoiceSchema = Joi.object({
     "number.integer": "Branch ID must be an integer",
     "number.positive": "Branch ID must be a positive number",
   }),
+  //discount part
+  discount: Joi.number().min(0).max(100).optional().messages({
+  "number.base": "Discount must be a number",
+  "number.min": "Discount cannot be negative",
+  "number.max": "Discount cannot exceed 100",
+}),
 }).min(1);
 
 const getInvoicesSchema = Joi.object({

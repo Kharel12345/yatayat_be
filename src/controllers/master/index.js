@@ -7,6 +7,8 @@ const BillingTitleController= require('./billing_title.controller');
 const BillingTitleMappingInfo=require('./billing_title_mapping.controller');
 const vehicleBillingController = require("./vehicle_billing.controller");
 const uploadController = require("./upload.controller");
+const messageSettingInfoController = require("./message_setting_controller");
+
 
 module.exports = {
   economicYearControllers,
@@ -17,5 +19,6 @@ module.exports = {
   categoryController,
   subCategoryController,
   BillingTitleController,
-  BillingTitleMappingInfo
+  BillingTitleMappingInfo,
+  messageSettingInfoController
 };

@@ -86,12 +86,15 @@ const CashInvoice = sequelize.define(
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
+  
   },
   {
     tableName: "cash_invoice",
     timestamps: false,
     underscored: true,
-  }
+  },
+  
+  
 );
 
 // Define associations

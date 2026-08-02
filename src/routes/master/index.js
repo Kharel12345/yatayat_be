@@ -8,7 +8,7 @@ const BillingTitleMappingInfoRoutes= require('./billing_title_mapping.route');
 const userRoutes = require("./user.route");
 const vehicleBillingRoute = require("./vehicle_billing.route");
 const uploadRoute = require("./upload.route");
-
+const messageSettingInfoRoute = require("./message_setting.route");
 module.exports = {
   smsSettingInfoRoute,
   vehicleRoute,
@@ -19,5 +19,6 @@ module.exports = {
   BillingTitleMappingInfoRoutes,
   userRoutes,
   vehicleBillingRoute,
-  uploadRoute
+  uploadRoute,
+  messageSettingInfoRoute
 };

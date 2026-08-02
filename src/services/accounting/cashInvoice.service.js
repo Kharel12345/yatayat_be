@@ -14,6 +14,11 @@ const { ORGANIZATION_NAME_PREFIX } = require("../../config/constant");
 const { ledgerServices } = require("./index");
 const sequelize = require("../../config/database");
 
+//for sms
+const MessageSetting = require("../../../models/master/message_setting.model");
+const { renderTemplate } = require("../../utils/renderTemplete");
+const { sendSMS, sendTemplatedSMS } = require("../accounting/sms.service");
+
 const createCashInvoice = async (cashInvoiceData) => {
   const transaction = await sequelize.transaction();
 
@@ -34,7 +39,9 @@ const createCashInvoice = async (cashInvoiceData) => {
     const bill_date = nepaliCalendar.BSToADConvert(bill_date_bs);
 
     // Check if vehicle exists
-    const vehicle = await Vehicle.findByPk(vehicle_id, { where: { status: 1 } });
+    const vehicle = await Vehicle.findByPk(vehicle_id, {
+      where: { status: 1 },
+    });
     if (!vehicle) {
       throw new NotFoundError("Vehicle not found");
     }
@@ -53,9 +60,9 @@ const createCashInvoice = async (cashInvoiceData) => {
       lock: transaction.LOCK.UPDATE,
     });
 
-    const nextReceipt = (parseInt(receiptIndex?.max_id || 0) + 1);
+    const nextReceipt = parseInt(receiptIndex?.max_id || 0) + 1;
     const receipt_no = `${ORGANIZATION_NAME_PREFIX}-${receiptIndex?.index_code || "receipt_no"}-${nextReceipt}`;
-    const transaction_id = parseInt((txnIndex?.max_id || 0)) + 1;
+    const transaction_id = parseInt(txnIndex?.max_id || 0) + 1;
 
     // Create cash invoice
     const cashInvoice = await CashInvoice.create(
@@ -72,7 +79,7 @@ const createCashInvoice = async (cashInvoiceData) => {
         created_by,
         status: 1,
       },
-      { transaction }
+      { transaction },
     );
 
     // Ledger postings: Receipt
@@ -80,10 +87,13 @@ const createCashInvoice = async (cashInvoiceData) => {
 
     if (payment_method.toLowerCase() === "cash") {
       // Get Cash in Hand ledger
-      const cashLedgerData = await ledgerServices.getAssociatedLedgerId("Cash in Hand");
+      const cashLedgerData =
+        await ledgerServices.getAssociatedLedgerId("Cash in Hand");
       const cash_ledger_id = cashLedgerData?.ledger_id;
       if (!cash_ledger_id) {
-        throw new ValidationError("Ledger mapping for 'Cash in Hand' is missing.");
+        throw new ValidationError(
+          "Ledger mapping for 'Cash in Hand' is missing.",
+        );
       }
       // Debit Cash in Hand
       await AccountingTransactionDetail.create(
@@ -103,7 +113,7 @@ const createCashInvoice = async (cashInvoiceData) => {
           narration,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
       // Credit Vehicle ledger
       await AccountingTransactionDetail.create(
@@ -123,7 +133,7 @@ const createCashInvoice = async (cashInvoiceData) => {
           narration,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
     }
 
@@ -149,7 +159,7 @@ const createCashInvoice = async (cashInvoiceData) => {
           narration,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
       // Credit Vehicle ledger
       await AccountingTransactionDetail.create(
@@ -169,7 +179,7 @@ const createCashInvoice = async (cashInvoiceData) => {
           narration,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
     }
 
@@ -177,17 +187,40 @@ const createCashInvoice = async (cashInvoiceData) => {
     if (txnIndex) {
       await IndexInfo.update(
         { max_id: transaction_id },
-        { where: { functional_year_id, index_code: "transaction_id" }, transaction }
+        {
+          where: { functional_year_id, index_code: "transaction_id" },
+          transaction,
+        },
       );
     }
     if (receiptIndex) {
       await IndexInfo.update(
         { max_id: sequelize.literal("max_id + 1") },
-        { where: { functional_year_id, index_code: "receipt_no" }, transaction }
+        {
+          where: { functional_year_id, index_code: "receipt_no" },
+          transaction,
+        },
       );
     }
 
     await transaction.commit();
+
+    (async () => {
+      try {
+        await sendTemplatedSMS(vehicle.contact, "cash_invoice", {
+          CustomerName: vehicle.ownerName,
+          VehicleNumber: vehicle.vehicleNo,
+          Amount: amount,
+          ReceiptNo: cashInvoice.receipt_no,
+          BillDate: cashInvoice.bill_date_bs,
+        });
+      } catch (smsErr) {
+        console.error(
+          `Cash Invoice ${cashInvoice.id} created but SMS failed:`,
+          smsErr.message,
+        );
+      }
+    })();
     return cashInvoice;
   } catch (error) {
     await transaction.rollback();
@@ -357,7 +390,7 @@ const updateCashInvoice = async (id, updateData) => {
 
     if (!existingEntries || existingEntries.length < 2) {
       throw new DatabaseError(
-        "Associated accounting entries not found for this cash invoice"
+        "Associated accounting entries not found for this cash invoice",
       );
     }
 
@@ -366,20 +399,21 @@ const updateCashInvoice = async (id, updateData) => {
 
     const txnId = debitRow?.transaction_id || creditRow?.transaction_id || null;
     const voucherNumber =
-      debitRow?.voucher_number || creditRow?.voucher_number || cashInvoice.receipt_no;
+      debitRow?.voucher_number ||
+      creditRow?.voucher_number ||
+      cashInvoice.receipt_no;
     const voucherType =
       debitRow?.voucher_type || creditRow?.voucher_type || "Receipt Voucher";
 
     // Determine debit ledger based on payment method
     let debitLedgerId;
     if (newPaymentMethod === "cash") {
-      const cashLedgerData = await ledgerServices.getAssociatedLedgerId(
-        "Cash in Hand"
-      );
+      const cashLedgerData =
+        await ledgerServices.getAssociatedLedgerId("Cash in Hand");
       debitLedgerId = cashLedgerData?.ledger_id;
       if (!debitLedgerId) {
         throw new ValidationError(
-          "Ledger mapping for 'Cash in Hand' is missing."
+          "Ledger mapping for 'Cash in Hand' is missing.",
         );
       }
     } else if (newPaymentMethod === "online") {
@@ -397,7 +431,8 @@ const updateCashInvoice = async (id, updateData) => {
 
     const newAmount = amount !== undefined ? amount : cashInvoice.amount;
     const newBranchId = branch_id || cashInvoice.branch_id;
-    const newFunctionalYearId = functional_year_id || cashInvoice.functional_year_id;
+    const newFunctionalYearId =
+      functional_year_id || cashInvoice.functional_year_id;
     const newRemarks = remarks !== undefined ? remarks : cashInvoice.remarks;
 
     // Update accounting entries
@@ -416,7 +451,7 @@ const updateCashInvoice = async (id, updateData) => {
           narration: `Receipt from vehicle ID ${newVehicleId}`,
           updated_at: new Date(),
         },
-        { transaction }
+        { transaction },
       );
     }
 
@@ -435,7 +470,7 @@ const updateCashInvoice = async (id, updateData) => {
           narration: `Receipt from vehicle ID ${newVehicleId}`,
           updated_at: new Date(),
         },
-        { transaction }
+        { transaction },
       );
     }
 
@@ -453,7 +488,7 @@ const updateCashInvoice = async (id, updateData) => {
         status: status !== undefined ? status : cashInvoice.status,
         updated_at: new Date(),
       },
-      { transaction }
+      { transaction },
     );
 
     await transaction.commit();
@@ -479,7 +514,7 @@ const deleteCashInvoice = async (id) => {
         status: 0,
         updated_at: new Date(),
       },
-      { transaction }
+      { transaction },
     );
 
     await transaction.commit();

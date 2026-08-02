@@ -23,6 +23,11 @@ const AccountingTransactionDetail = require("../../../models/accounting/accounti
 const LedgerInfo = require("../../../models/accounting/ledger.model");
 const IndexInfo = require("../../../models/master/index_info.model");
 
+//for sms
+const MessageSetting = require("../../../models/master/message_setting.model");
+const { renderTemplate } = require("../../utils/renderTemplete");
+const { sendSMS, sendTemplatedSMS } = require("../accounting/sms.service");
+
 const createInvoice = async (invoiceData) => {
   const transaction = await sequelize.transaction();
 
@@ -36,6 +41,7 @@ const createInvoice = async (invoiceData) => {
       receipt_no,
       expiry_date_bs,
       amount,
+      discount,
       status,
       transaction_id,
       cash_ledger_id,
@@ -64,6 +70,18 @@ const createInvoice = async (invoiceData) => {
     if (!billingTitle) {
       throw new NotFoundError("Billing title not found");
     }
+
+    // --- discount calculation ---
+    const grossAmount = parseFloat(amount) || 0;
+    const discountPct = parseFloat(discount) || 0;
+
+    if (discountPct < 0 || discountPct > 100) {
+      throw new ValidationError("Discount must be between 0 and 100");
+    }
+
+    const discountAmount = +((grossAmount * discountPct) / 100).toFixed(2);
+    const netAmount = +(grossAmount - discountAmount).toFixed(2);
+
     const narration = "test vechole";
 
     // Create invoice
@@ -72,7 +90,9 @@ const createInvoice = async (invoiceData) => {
         invoice_number: receipt_no,
         vehicle_id,
         billing_title_id,
-        rate: amount,
+        rate: grossAmount,              // gross/original rate
+        discount_amount: discountAmount, // amount discounted
+        total_amount: netAmount,         // net amount actually charged (Total amount to be charged)
         expiry_date: expire_date,
         payment_mode: payment_method.toLowerCase(),
         remarks,
@@ -80,10 +100,9 @@ const createInvoice = async (invoiceData) => {
         invoice_date_bs: bill_date_bs,
         expire_date_bs: expiry_date_bs,
         receipt_no,
-        total_amount: amount,
         status: status,
       },
-      { transaction }
+      { transaction },
     );
 
     const tableId = invoice.id;
@@ -95,7 +114,7 @@ const createInvoice = async (invoiceData) => {
           comes_from: "SALES ENTRY",
           ledger_id: cash_ledger_id,
           credit: 0.0,
-          debit: amount,
+          debit: netAmount,
           table_id: tableId,
           transaction_id,
           voucher_date_ad: invoice_date,
@@ -107,7 +126,7 @@ const createInvoice = async (invoiceData) => {
           narration: `Cash Paid By ${narration}`,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
 
       // Sales ledger (Credit - without VAT)
@@ -115,7 +134,7 @@ const createInvoice = async (invoiceData) => {
         {
           comes_from: "SALES ENTRY",
           ledger_id: sales_ledger_id,
-          credit: amount, //grand_total_amount - vat_amount
+          credit: netAmount,
           debit: 0.0,
           table_id: tableId,
           transaction_id,
@@ -128,42 +147,17 @@ const createInvoice = async (invoiceData) => {
           narration: `Cash Paid By ${narration}`,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
-
-      // VAT payable ledger
-      // if (vat_amount > 0) {
-      //   await AccountingTransactionDetail.create(
-      //     {
-      //       comes_from: "SALES ENTRY",
-      //       ledger_id: process.env.VAT_LEDGER_ID, // Ensure vat_payable_ledger_id is mapped properly
-      //       credit: vat_amount,
-      //       debit: 0.0,
-      //       table_id: salesId,
-      //       transaction_id,
-      //       voucher_date_ad: invoice_date,
-      //       voucher_date_bs: bill_date_bs,
-      //       voucher_number: receipt_no,
-      //       voucher_type: "Sales Voucher",
-      //       functional_year_id,
-      //       branch_id,
-      //       narration: `Cash Paid By ${narration}`,
-      //       created_by,
-      //     },
-      //     { transaction }
-      //   );
-      // }
     }
 
     /** ---------------------- CREDIT ---------------------- **/
     if (payment_method.toUpperCase() === "CREDIT") {
-      // Sales ledger credit
-
       await AccountingTransactionDetail.create(
         {
           comes_from: "SALES ENTRY",
           ledger_id: sales_ledger_id,
-          credit: amount, // - vat_amount,
+          credit: netAmount,
           debit: 0.0,
           table_id: tableId,
           transaction_id,
@@ -176,16 +170,15 @@ const createInvoice = async (invoiceData) => {
           narration: `Credit Sales ${narration}`,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
 
-      // Party ledger debit
       await AccountingTransactionDetail.create(
         {
           comes_from: "SALES ENTRY",
           ledger_id: vechile_ledger_id,
           credit: 0.0,
-          debit: amount,
+          debit: netAmount,
           table_id: tableId,
           transaction_id,
           voucher_date_ad: invoice_date,
@@ -197,41 +190,17 @@ const createInvoice = async (invoiceData) => {
           narration: `Credit Sales ${narration}`,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
-
-      // VAT payable
-      // if (vat_amount > 0) {
-      //   await AccountingTransactionDetail.create(
-      //     {
-      //       comes_from: "SALES ENTRY",
-      //       ledger_id: process.env.VAT_LEDGER_ID,
-      //       credit: vat_amount,
-      //       debit: 0.0,
-      //       table_id: salesId,
-      //       transaction_id,
-      //       voucher_date_ad: invoice_date_ad,
-      //       voucher_date_bs: invoice_date_bs,
-      //       voucher_number: receipt_no,
-      //       voucher_type: "Sales Voucher",
-      //       functional_year_id,
-      //       branch_id,
-      //       narration: `Credit Sales ${narration}`,
-      //       created_by,
-      //     },
-      //     { transaction }
-      //   );
-      // }
     }
 
     /** ---------------------- DIRECT BANK TRANSFER ---------------------- **/
     if (payment_method.toUpperCase() === "DIRECT BANK TRANSFER") {
-      // Sales ledger credit
       await AccountingTransactionDetail.create(
         {
           comes_from: "SALES ENTRY",
           ledger_id: sales_ledger_id,
-          credit: amount, //rand_total_amount - vat_amount
+          credit: netAmount,
           debit: 0.0,
           table_id: tableId,
           transaction_id,
@@ -244,16 +213,15 @@ const createInvoice = async (invoiceData) => {
           narration: `Direct Bank Transfer Invoice ${narration}`,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
 
-      // Bank ledger debit
       await AccountingTransactionDetail.create(
         {
           comes_from: "SALES ENTRY",
           ledger_id: bank_id,
           credit: 0.0,
-          debit: amount,
+          debit: netAmount,
           table_id: tableId,
           transaction_id,
           voucher_date_ad: invoice_date,
@@ -265,32 +233,10 @@ const createInvoice = async (invoiceData) => {
           narration: `Direct Bank Transfer Sales ${narration}`,
           created_by,
         },
-        { transaction }
+        { transaction },
       );
-
-      // VAT payable ledger
-      // if (vat_amount > 0) {
-      //   await AccountingTransactionDetail.create(
-      //     {
-      //       comes_from: "SALES ENTRY",
-      //       ledger_id: process.env.VAT_LEDGER_ID,
-      //       credit: vat_amount,
-      //       debit: 0.0,
-      //       table_id: salesId,
-      //       transaction_id,
-      //       voucher_date_ad: invoice_date_ad,
-      //       voucher_date_bs: invoice_date_bs,
-      //       voucher_number: receipt_no,
-      //       voucher_type: "Sales Voucher",
-      //       functional_year_id,
-      //       branch_id,
-      //       narration: `Direct Bank Transfer Sales ${narration}`,
-      //       created_by,
-      //     },
-      //     { transaction }
-      //   );
-      // }
     }
+
     await IndexInfo.update(
       { max_id: transaction_id },
       {
@@ -298,7 +244,7 @@ const createInvoice = async (invoiceData) => {
           index_code: "transaction_id",
           functional_year_id: functional_year_id,
         },
-      }
+      },
     );
 
     await IndexInfo.update(
@@ -308,10 +254,28 @@ const createInvoice = async (invoiceData) => {
           index_code: "receipt_no",
           functional_year_id: functional_year_id,
         },
-      }
+      },
     );
 
     await transaction.commit();
+
+    (async () => {
+      try {
+        await sendTemplatedSMS(vehicle.contact, "invoice", {
+          CustomerName: vehicle.ownerName,
+          BillingTitle: billingTitle.billing_title,
+          VehicleNumber: vehicle.vehicleNo,
+          Amount: invoice.total_amount,
+          ExpireDate: invoice.expire_date_bs,
+        });
+      } catch (smsErr) {
+        console.error(
+          `Invoice ${invoice.id} created but SMS failed:`,
+          smsErr.message,
+        );
+      }
+    })();
+
     return invoice;
   } catch (error) {
     await transaction.rollback();
@@ -459,7 +423,14 @@ const updateInvoice = async (id, updateData) => {
     }
 
     // Determine payment method/mode changes
-    const newPaymentMethod = (payment_method || invoice.payment_mode || payment_mode || "").toString().toLowerCase();
+    const newPaymentMethod = (
+      payment_method ||
+      invoice.payment_mode ||
+      payment_mode ||
+      ""
+    )
+      .toString()
+      .toLowerCase();
     const effectivePaymentMode = newPaymentMethod || invoice.payment_mode;
 
     // Update accounting entries for this invoice (comes_from = 'SALES ENTRY')
@@ -477,36 +448,57 @@ const updateInvoice = async (id, updateData) => {
       const debitRow = entries.find((e) => parseFloat(e.debit) > 0);
       const creditRow = entries.find((e) => parseFloat(e.credit) > 0);
 
-      const voucherNumber = receipt_no || debitRow?.voucher_number || creditRow?.voucher_number || invoice.receipt_no;
-      const voucherType = debitRow?.voucher_type || creditRow?.voucher_type || "Renew Voucher";
+      const voucherNumber =
+        receipt_no ||
+        debitRow?.voucher_number ||
+        creditRow?.voucher_number ||
+        invoice.receipt_no;
+      const voucherType =
+        debitRow?.voucher_type || creditRow?.voucher_type || "Renew Voucher";
 
       // Recompute ledgers based on payment mode
       let debitLedgerId = debitRow?.ledger_id;
       let creditLedgerId = creditRow?.ledger_id;
 
       // Resolve sales ledger mapping
-      const salesMap = await LedgerInfo.findOne({ where: { status: 1, ledgername: { [Op.like]: "%Sales%" } } });
+      const salesMap = await LedgerInfo.findOne({
+        where: { status: 1, ledgername: { [Op.like]: "%Sales%" } },
+      });
       const salesLedgerId = salesMap?.id;
 
-      const amountVal = amount !== undefined ? amount : Number(invoice.total_amount);
-      const functionalYearId = functional_year_id || debitRow?.functional_year_id || invoice.functional_year_id;
+      const amountVal =
+        amount !== undefined ? amount : Number(invoice.total_amount);
+      const functionalYearId =
+        functional_year_id ||
+        debitRow?.functional_year_id ||
+        invoice.functional_year_id;
       const branchId = branch_id || debitRow?.branch_id || invoice.branch_id;
 
       if (effectivePaymentMode === "cash") {
         // Debit: Cash in Hand, Credit: Sales
         const { ledgerServices } = require("./index");
-        const cashLedgerData = await ledgerServices.getAssociatedLedgerId("Cash in Hand");
-        if (!cashLedgerData?.ledger_id) throw new ValidationError("Ledger mapping for 'Cash in Hand' is missing.");
+        const cashLedgerData =
+          await ledgerServices.getAssociatedLedgerId("Cash in Hand");
+        if (!cashLedgerData?.ledger_id)
+          throw new ValidationError(
+            "Ledger mapping for 'Cash in Hand' is missing.",
+          );
         debitLedgerId = cashLedgerData.ledger_id;
         creditLedgerId = salesLedgerId || creditLedgerId;
       } else if (effectivePaymentMode === "credit") {
         // Debit: Party (vehicle ledger), Credit: Sales
         debitLedgerId = vehicle.ledgerId;
         creditLedgerId = salesLedgerId || creditLedgerId;
-      } else if (effectivePaymentMode === "bank_transfer" || effectivePaymentMode === "online" || effectivePaymentMode === "direct bank transfer") {
+      } else if (
+        effectivePaymentMode === "bank_transfer" ||
+        effectivePaymentMode === "online" ||
+        effectivePaymentMode === "direct bank transfer"
+      ) {
         // Debit: Bank, Credit: Sales
         if (!bank_id && !(debitRow && parseFloat(debitRow.debit) > 0)) {
-          throw new ValidationError("bank_id is required for bank/online payments");
+          throw new ValidationError(
+            "bank_id is required for bank/online payments",
+          );
         }
         debitLedgerId = bank_id || debitRow.ledger_id;
         creditLedgerId = salesLedgerId || creditLedgerId;
@@ -528,7 +520,7 @@ const updateInvoice = async (id, updateData) => {
             narration: `Renew invoice for vehicle ${newVehicleId}`,
             updated_at: new Date(),
           },
-          { transaction }
+          { transaction },
         );
       }
 
@@ -547,7 +539,7 @@ const updateInvoice = async (id, updateData) => {
             narration: `Renew invoice for vehicle ${newVehicleId}`,
             updated_at: new Date(),
           },
-          { transaction }
+          { transaction },
         );
       }
     }
@@ -567,11 +559,12 @@ const updateInvoice = async (id, updateData) => {
         bank_id: bank_id !== undefined ? bank_id : invoice.bank_id,
         receipt_no: receipt_no || invoice.receipt_no,
         status: status !== undefined ? status : invoice.status,
-        payment_date: payment_date !== undefined ? payment_date : invoice.payment_date,
+        payment_date:
+          payment_date !== undefined ? payment_date : invoice.payment_date,
         remarks: remarks !== undefined ? remarks : invoice.remarks,
         updated_at: new Date(),
       },
-      { transaction }
+      { transaction },
     );
 
     await transaction.commit();
@@ -679,7 +672,7 @@ const getDashboardStats = async () => {
           [Op.gte]: new Date(
             new Date().getFullYear(),
             new Date().getMonth(),
-            1
+            1,
           ),
         },
       },

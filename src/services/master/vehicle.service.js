@@ -6,6 +6,9 @@ const { Op } = require("sequelize");
 const { ledgerServices } = require("../accounting");
 const { sequelize } = require("../../../models");
 
+//for sms 
+const {sendTemplatedSMS} = require("../../services/accounting/sms.service")
+
 const createOrUpdateLedgerForVehicle = async (vehicle, meta, transaction) => {
   const {
     functionalYear,
@@ -146,9 +149,25 @@ const createVehicle = async (data) => {
     // Step 7: Commit transaction if everything succeeded
     await transaction.commit();
 
+    // Send registration SMS 
+    try {
+      if (vehicle.contact) {
+        await sendTemplatedSMS(vehicle.contact, "registration", {
+          CustomerName: vehicle.ownerName,
+          BillingTitle: "सवारी दर्ता",
+          VehicleNumber: vehicle.vehicleNo,
+          OrganizationName: vehicle.organization || process.env.ORG_NAME || "",
+        });
+      } else {
+        console.warn(`Vehicle ${vehicle.id} has no contact number; skipping registration SMS`);
+      }
+    } catch (smsErr) {
+      console.error(`Registration SMS failed for vehicle ${vehicle.id}: ${smsErr.message}`);
+    }
+
     return vehicle;
   } catch (error) {
-    // Rollback if any error happens
+   
     await transaction.rollback();
     console.error("Error creating vehicle and ledger:", error);
     throw error;
