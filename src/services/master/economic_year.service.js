@@ -1,11 +1,22 @@
 const { FunctionalYear } = require("../../../models/master")
+const { checkFunctionalYearExists } = require("../../../models/master/economic_year.model")
 
 const setupEconomicYear = async (economicYearDetail) => {
     try {
-        let result = await FunctionalYear.economicYearSetup(economicYearDetail)
-        return result
+        //if exists 
+        const exists = await FunctionalYear.checkFunctionalYearExists(
+            economicYearDetail.functional_year_start_bs,
+            economicYearDetail.functional_year_end_bs
+        );
+        if (exists) {
+            const err = new Error("This economic year has already been set up and cannot be saved again.");
+            err.statusCode = 409;
+            throw err;
+        }
+        return await FunctionalYear.economicYearSetup(economicYearDetail);
     } catch (error) {
-        throw new Error(error)
+        console.error("Error setting economic year:", error.message);
+        throw error;
     }
 }
 

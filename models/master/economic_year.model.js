@@ -6,6 +6,16 @@ class FunctionalYear extends Model {
     return await FunctionalYear.create(data);
   }
 
+  ///check if that fun year alreedy exists
+ static async checkFunctionalYearExists(functional_year_start_bs, functional_year_end_bs) {
+  return await FunctionalYear.findOne({
+    where: {
+      functional_year_start_bs,
+      functional_year_end_bs,
+    },
+  });
+}
+
   static async setInactiveEconomicYear() {
     return await FunctionalYear.update({ status: 0 }, { where: { status: 1 } });
   }
