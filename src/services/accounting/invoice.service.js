@@ -46,7 +46,7 @@ const createInvoice = async (invoiceData) => {
       transaction_id,
       cash_ledger_id,
       sales_ledger_id,
-      functional_year_id, //renew mapping title
+      functional_year_id,
       bank_id,
       branch_id,
       created_by,
@@ -56,14 +56,12 @@ const createInvoice = async (invoiceData) => {
     const invoice_date = nepaliCalendar.BSToADConvert(bill_date_bs);
     const expire_date = nepaliCalendar.BSToADConvert(expiry_date_bs);
 
-    // Check if vehicle exists
     const vehicle = await Vehicle.findByPk(vehicle_id, { status: 1 });
     if (!vehicle) {
       throw new NotFoundError("Vehicle not found");
     }
     const vechile_ledger_id = vehicle.ledgerId;
 
-    // Check if billing title exists
     const billingTitle = await BillingTitleInfo.findByPk(billing_title_id, {
       status: 1,
     });
@@ -71,28 +69,31 @@ const createInvoice = async (invoiceData) => {
       throw new NotFoundError("Billing title not found");
     }
 
-    // --- discount calculation ---
+    // --- discount calculation (fixed amount) ---
     const grossAmount = parseFloat(amount) || 0;
-    const discountPct = parseFloat(discount) || 0;
+    const discountAmount = parseFloat(discount) || 0;
 
-    if (discountPct < 0 || discountPct > 100) {
-      throw new ValidationError("Discount must be between 0 and 100");
+    if (discountAmount < 0) {
+      throw new ValidationError("Discount cannot be negative");
+    }
+    if (discountAmount > grossAmount) {
+      throw new ValidationError(
+        `Discount amount (₹${discountAmount.toFixed(2)}) cannot exceed the total amount (₹${grossAmount.toFixed(2)}). Please enter a smaller discount.`
+      );
     }
 
-    const discountAmount = +((grossAmount * discountPct) / 100).toFixed(2);
     const netAmount = +(grossAmount - discountAmount).toFixed(2);
 
     const narration = "test vechole";
 
-    // Create invoice
     const invoice = await Invoice.create(
       {
         invoice_number: receipt_no,
         vehicle_id,
         billing_title_id,
-        rate: grossAmount,              // gross/original rate
-        discount_amount: discountAmount, // amount discounted
-        total_amount: netAmount,         // net amount actually charged (Total amount to be charged)
+        rate: grossAmount,
+        discount_amount: discountAmount,
+        total_amount: netAmount,
         expiry_date: expire_date,
         payment_mode: payment_method.toLowerCase(),
         remarks,
@@ -108,7 +109,6 @@ const createInvoice = async (invoiceData) => {
     const tableId = invoice.id;
 
     if (payment_method.toUpperCase() === "CASH") {
-      // Cash in hand ledger (Debit)
       await accounting_transaction_detailModel.create(
         {
           comes_from: "SALES ENTRY",
@@ -129,7 +129,6 @@ const createInvoice = async (invoiceData) => {
         { transaction },
       );
 
-      // Sales ledger (Credit - without VAT)
       await accounting_transaction_detailModel.create(
         {
           comes_from: "SALES ENTRY",
@@ -151,7 +150,6 @@ const createInvoice = async (invoiceData) => {
       );
     }
 
-    /** ---------------------- CREDIT ---------------------- **/
     if (payment_method.toUpperCase() === "CREDIT") {
       await AccountingTransactionDetail.create(
         {
@@ -194,7 +192,6 @@ const createInvoice = async (invoiceData) => {
       );
     }
 
-    /** ---------------------- DIRECT BANK TRANSFER ---------------------- **/
     if (payment_method.toUpperCase() === "DIRECT BANK TRANSFER") {
       await AccountingTransactionDetail.create(
         {
@@ -279,7 +276,18 @@ const createInvoice = async (invoiceData) => {
     return invoice;
   } catch (error) {
     await transaction.rollback();
-    throw error;
+    
+    // Better error messages for common issues
+    if (error.name === "ValidationError" || error.name === "SequelizeValidationError") {
+      throw new ValidationError(error.message);
+    }
+    
+    if (error.name === "NotFoundError") {
+      throw new NotFoundError(error.message);
+    }
+    
+    // For any other error, provide a clear message
+    throw new Error(`Failed to create invoice: ${error.message}`);
   }
 };
 

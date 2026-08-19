@@ -70,10 +70,9 @@ const createInvoiceSchema = Joi.object({
     "any.required": "Branch ID is required",
   }),
   //discount part
-  discount: Joi.number().min(0).max(100).optional().messages({
+  discount: Joi.number().min(0).optional().messages({
   "number.base": "Discount must be a number",
   "number.min": "Discount cannot be negative",
-  "number.max": "Discount cannot exceed 100",
 }),
 });
 
@@ -154,10 +153,9 @@ const updateInvoiceSchema = Joi.object({
     "number.positive": "Branch ID must be a positive number",
   }),
   //discount part
-  discount: Joi.number().min(0).max(100).optional().messages({
+  discount: Joi.number().min(0).optional().messages({
   "number.base": "Discount must be a number",
   "number.min": "Discount cannot be negative",
-  "number.max": "Discount cannot exceed 100",
 }),
 }).min(1);
 
@@ -170,7 +168,7 @@ const getInvoicesSchema = Joi.object({
   limit: Joi.number()
     .integer()
     .positive()
-    .max(100)
+    
     .optional()
     .default(10)
     .messages({
