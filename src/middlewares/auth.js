@@ -33,26 +33,32 @@ const auth = async (req, res, next) => {
     } catch (error) {
         try {
 
-            const { user_id, username, name } = jwtServices.verify(refreshToken, REFRESH_SECRET);
+                const { user_id, username, name } = jwtServices.verify(refreshToken, REFRESH_SECRET);
 
-            //generate new access token and refresh token and update old refresh token with new one 
-            if (user_id) {
-                const { access_token, refresh_token } = await authServices.refresh(refreshToken);
-                res.cookie('refresh_token', access_token, {
-                    httpOnly: true,
-                    secure: true,
-                    maxAge: COOKIE_EXPIRY,
-                });
+                //generate new access token and refresh token and update old refresh token with new one 
+                if (user_id) {
+                    const { access_token, refresh_token } = await authServices.refresh(refreshToken);
+                    const isProd = process.env.NODE_ENV === 'production';
 
-                res.cookie('access_token', refresh_token, {
-                    httpOnly: true,
-                    secure: true,
-                    maxAge: COOKIE_EXPIRY,
-                });
+                    res.cookie('refresh_token', refresh_token, {
+                        httpOnly: true,
+                        secure: isProd,
+                        sameSite: 'none',
+                        maxAge: COOKIE_EXPIRY,
+                        path: '/',
+                    });
 
-                req.user = { user_id, username, name };
-                next();
-            }
+                    res.cookie('access_token', access_token, {
+                        httpOnly: false,
+                        secure: isProd,
+                        sameSite: 'none',
+                        maxAge: COOKIE_EXPIRY,
+                        path: '/',
+                    });
+
+                    req.user = { user_id, username, name };
+                    next();
+                }
         } catch (error) {
             return next(CustomErrorHandler.unAuthorized());
         }

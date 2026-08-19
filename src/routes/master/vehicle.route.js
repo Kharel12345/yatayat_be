@@ -1,11 +1,61 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { register, renew, getDue } = require('../../controllers/master/vehicle.controller');
-const auth = require('../../middlewares/auth/auth');
-const { preauthorize } = require('../../utils/preAuthorize');
 
-router.post('/register', auth, preauthorize('create_vehicle'), register);
-router.post('/renew', auth, preauthorize('renew_vehicle'), renew);
-router.get('/due', auth, preauthorize('view_due_vehicle'), getDue);
+const auth = require("../../middlewares/auth");
+const {
+  vechileRegistrationValidation,
+} = require("../../middlewares/validation/master");
+const { vehicleController } = require("../../controllers/master");
+const upload = require("../../middlewares/upload");
+// const { preauthorize } = require('../../utils/preAuthorize');
 
-module.exports = router; 
+router.post(
+  "/creatememberregistartion",
+  auth,
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "billBookPhoto", maxCount: 1 },
+    { name: "licensePaper", maxCount: 1 },
+    { name: "insurancePaper", maxCount: 1 },
+    { name: "routePermit", maxCount: 1 },
+    { name: "jachPass", maxCount: 1 },
+    { name: "operatorPhoto", maxCount: 1 },
+    { name: "helperPhoto", maxCount: 1 },
+    { name: "driverPhoto[0]", maxCount: 5 },
+    { name: "driverPhoto[1]", maxCount: 5 },
+  ]),
+  vechileRegistrationValidation.vechileRegistrationValidation,
+  vehicleController.createVehicle
+);
+router.get(
+  "/getmemberregistartionpagination",
+  vehicleController.getVehiclesPaginated
+);
+router.get("/getmemberregistartionbyid/:id", vehicleController.getVehicleById);
+router.put(
+  "/updatememberregistartion/:id",
+  auth,
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "billBookPhoto", maxCount: 1 },
+    { name: "licensePaper", maxCount: 1 },
+    { name: "insurancePaper", maxCount: 1 },
+    { name: "routePermit", maxCount: 1 },
+    { name: "jachPass", maxCount: 1 },
+    { name: "operatorPhoto", maxCount: 1 },
+    { name: "helperPhoto", maxCount: 1 },
+    { name: "driverPhoto[0]", maxCount: 5 },
+    { name: "driverPhoto[1]", maxCount: 5 },
+  ]),
+  vechileRegistrationValidation.vechileRegistrationValidation,
+  vehicleController.updateVehicle
+);
+router.delete("/deletememberregistartion/:id", vehicleController.deleteVehicle);
+
+router.get(
+  "/getvechiles-dropdown",
+  auth,
+  vehicleController.getVechilesForDropdown
+);
+
+module.exports = router;

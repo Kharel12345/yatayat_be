@@ -1,8 +1,14 @@
 const { ValidationError } = require('joi')
 const CustomErrorHandler = require('./CustomErrorHandler')
 const { NODE_ENV } = require('../config/constant')
+const { cleanupUploadedFiles } = require('./fileCleanup')
 
 const errorHandler = (err, req, res, next) => {
+
+    // Clean up uploaded files if any error occurs during request processing
+    if (req.files || req.file) {
+        cleanupUploadedFiles(req.files, req.file);
+    }
 
     //default error
     let statusCode = 500

@@ -1,34 +1,77 @@
-// models/user.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+// // models/user.js
+const { DataTypes, Sequelize } = require('sequelize');
+const sequelize = require('../src/config/database');
+const UserPermissionInfo = require('./userpermission.model');
+const BranchInfo = require('./branch.model');
+const UserBranchInfo = require('./userbranch.model');
 
 const User = sequelize.define('User', {
-    id: {
+    user_id: {
         type: DataTypes.INTEGER,
-        primaryKey: true,
         autoIncrement: true,
+        primaryKey: true,
         allowNull: false,
-    },
-    username: {
+      },
+      name: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
+      },
+      address: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      contact: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      username: {
+        type: DataTypes.STRING,
         unique: true,
-    },
-    email: {
+        allowNull: true,
+      },
+      password: {
         type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-        validate: {
-            isEmail: true,
-        },
-    },
-    password: {
+        allowNull: true,
+      },
+      status: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      user_type: {
         type: DataTypes.STRING,
+        allowNull: true,
+      },
+      created_by: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      // timestamps false, so no createdAt or updatedAt columns
+      createdAt: {
+        type: DataTypes.DATE,
         allowNull: false,
-    }
+        defaultValue: Sequelize.fn("NOW"),
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.fn("NOW"),
+      },
 }, {
-    tableName: 'user',
-    timestamps: true
+  tableName: 'user',
+  timestamps: false
 });
+
+
+User.belongsTo(UserPermissionInfo, {
+  foreignKey: "user_id",
+  targetKey: "user_id",
+  as: "permissionInfo",
+});
+
+User.belongsTo(UserBranchInfo, {
+  foreignKey: "user_id",
+  targetKey: "user_id",
+  as: "branchInfo",
+})
 
 module.exports = User;

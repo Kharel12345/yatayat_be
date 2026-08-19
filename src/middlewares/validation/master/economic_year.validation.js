@@ -17,10 +17,8 @@ const adDateToCustomDateValidationSchema = Joi.object({
 })
 
 const branchSetupValidationSchema = Joi.object({
-    branch_code: Joi.number().required(),
     name: Joi.string().required(),
-    address: Joi.string().required().allow("", null),
-    contact: Joi.string().required().allow("", null)
+    status: Joi.number().required().valid(0, 1)
 })
 
 const branchSetupValidation = (req, res, next) => {

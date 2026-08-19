@@ -1,76 +1,162 @@
-const User = require('../../../models/user.model')
-const CustomErrorHandler = require('../../utils/CustomErrorHandler')
-const bcrypt = require('bcryptjs')
-const jwtServices = require('./jwt.service')
-const { JWT_SECRET, JWT_EXPIRY, REFRESH_EXPIRY, REFRESH_SECRET, CAPTCHA, CAPTCHA_SECRET_KEY } = require('../../config/constant')
-const axios = require('axios')
-const RefreshToken = require('../../../models/refreshToken.model')
-const { Op } = require('sequelize');
+const User = require("../../../models/user.model");
+const CustomErrorHandler = require("../../utils/CustomErrorHandler");
+const bcrypt = require("bcryptjs");
+const jwtServices = require("./jwt.service");
+const {
+  JWT_SECRET,
+  JWT_EXPIRY,
+  REFRESH_EXPIRY,
+  REFRESH_SECRET,
+  CAPTCHA,
+  CAPTCHA_SECRET_KEY,
+} = require("../../config/constant");
+const axios = require("axios");
+const RefreshToken = require("../../../models/refreshToken.model");
+const { Op } = require("sequelize");
+const UserPermissionInfo = require("../../../models/userpermission.model");
+const UserBranchInfo = require("../../../models/userbranch.model");
 
 const findUser = async (username) => {
-    return await User.findOne({ where: { username } });
+  return await User.findOne({ where: { username } });
+};
+
+const findUserById = async (user_id) => {
+  return await User.findOne({ where: { user_id } });
 };
 
 const validatePassword = async (password, user) => {
-    return await bcrypt.compare(password, user.password);
+  return await bcrypt.compare(password, user?.password);
 };
 
-const createRefreshToken = async (user_id, refresh_token) => {
-    await RefreshToken.create({ user_id, token: refresh_token });
-    return refresh_token;
-}
+const createRefreshToken = async (userId, refresh_token) => {
+  await RefreshToken.create({ user_id: userId, token: refresh_token });
+  return refresh_token;
+};
 
 const verifyCaptchaResponse = async (captchaResponse) => {
-    const url = `https://www.google.com/recaptcha/api/siteverify?secret=${CAPTCHA_SECRET_KEY}&response=${captchaResponse}`
-    if (CAPTCHA == "true") {
-        const response = await axios.post(url);
-        return response.data.success
-    }
-    return true
-}
+  const url = `https://www.google.com/recaptcha/api/siteverify?secret=${CAPTCHA_SECRET_KEY}&response=${captchaResponse}`;
+  if (CAPTCHA == "true") {
+    const response = await axios.post(url);
+    return response.data.success;
+  }
+  return true;
+};
 
 const logout = async (refresh_token) => {
-    const result = await RefreshToken.destroy({ where: { token: refresh_token } })
-    return result
-}
+  const result = await RefreshToken.destroy({
+    where: { token: refresh_token },
+  });
+  return result;
+};
 
 const refresh = async (refresh_token) => {
-    const token = await RefreshToken.findOne({ where: { token: refresh_token } })
-    if (token == null) return CustomErrorHandler.unAuthorized()
+  const token = await RefreshToken.findOne({ where: { token: refresh_token } });
+  if (token == null) return CustomErrorHandler.unAuthorized();
 
-    //verify the refresh token 
-    const { user_id, username, email } = jwtServices.verify(refresh_token, REFRESH_SECRET)
+  //verify the refresh token
+  const { user_id, username, email } = jwtServices.verify(
+    refresh_token,
+    REFRESH_SECRET
+  );
 
-    //check if user exists 
-    const user = await User.findOne({ where: { id: user_id } })
-    if (user == null) return CustomErrorHandler.unAuthorized('No user found')
+  //check if user exists
+  const user = await User.findOne({ where: { id: user_id } });
+  if (user == null) return CustomErrorHandler.unAuthorized("No user found");
 
-    //generate new tokens
-    let payload = { user_id, username, email }
-    let new_access_token = jwtServices.generateToken(payload, JWT_SECRET, JWT_EXPIRY)
-    let new_refresh_token = jwtServices.generateToken(payload, REFRESH_SECRET, REFRESH_EXPIRY)
+  //generate new tokens
+  let payload = { user_id, username, email };
+  let new_access_token = jwtServices.generateToken(
+    payload,
+    JWT_SECRET,
+    JWT_EXPIRY
+  );
+  let new_refresh_token = jwtServices.generateToken(
+    payload,
+    REFRESH_SECRET,
+    REFRESH_EXPIRY
+  );
 
-    await RefreshToken.update(
-        { token: new_refresh_token },
-        {
-            where: {
-                [Op.and]: [
-                    { token: refresh_token },
-                    { user_id: user_id }
-                ]
+  await RefreshToken.update(
+    { token: new_refresh_token },
+    {
+      where: {
+        [Op.and]: [{ token: refresh_token }, { user_id: user_id }],
+      },
+    }
+  );
 
-            }
-        }
-    )
+  return { access_token: new_access_token, refresh_token: new_refresh_token };
+};
 
-    return { access_token: new_access_token, refresh_token: new_refresh_token }
-}
+const getUserDetails = async () => {
+  return await User.findAll();
+};
+
+const getUserDetailsById = async (user_id) => {
+  const user = await User.findOne({
+    where: { user_id },
+    attributes: { exclude: ['password'] },
+    include: [
+      {
+        model: UserPermissionInfo,
+        as: "permissionInfo",
+      },
+      {
+        model: UserBranchInfo,
+        as: "branchInfo",
+      },
+    ],
+
+  });
+
+  return user;
+};
+
+const getUserPermission = async (user_id) => {
+  const user = await UserPermissionInfo.findOne({
+    where: { status: 1, user_id },
+  });
+
+  return user;
+};
+
+const getUserList = async () => {
+  return await User.findAll({
+    where: { status: 1 },
+    exclude: ['password']
+  });
+};
+
+const updateUserPermission = async (user_id, permission, created_by) => {
+  const existing = await UserPermissionInfo.findOne({ where: { user_id } });
+
+  if (existing) {
+    await existing.update({ permission, created_by });
+    return { record: existing, created: false };
+  } else {
+    const newRecord = await UserPermissionInfo.create({ user_id, permission, created_by });
+    return { record: newRecord, created: true };
+  }
+};
+
+const changePassword = async (user_id, password) => {
+  return await User.update({ password }, { where: { user_id } });
+};
+
+
 
 module.exports = {
-    logout,
-    refresh,
-    findUser,
-    verifyCaptchaResponse,
-    validatePassword,
-    createRefreshToken
-}
+  logout,
+  refresh,
+  findUser,
+  verifyCaptchaResponse,
+  validatePassword,
+  createRefreshToken,
+  getUserDetails,
+  getUserDetailsById,
+  getUserPermission,
+  getUserList,
+  updateUserPermission,
+  changePassword,
+  findUserById
+};

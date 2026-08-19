@@ -3,6 +3,7 @@ const { authServices, jwtServices } = require('../../services/auth');
 const { JWT_SECRET, JWT_EXPIRY, REFRESH_SECRET, REFRESH_EXPIRY, COOKIE_EXPIRY } = require('../../config/constant');
 const CustomErrorHandler = require('../../utils/CustomErrorHandler');
 const logger = require('../../config/winstonLoggerConfig');
+const bcrypt = require("bcryptjs");
 
 const login = asyncHandler(async (req, res, next) => {
     const { username, password, captchaResponse } = req.body
@@ -12,7 +13,9 @@ const login = asyncHandler(async (req, res, next) => {
         return CustomErrorHandler.inValidCaptchaResponse();
     }
 
-    const user = await authServices.findUser(username);
+    const responeData = await authServices.findUser(username);
+ 
+    const user = responeData;
     const validatePassword = await authServices.validatePassword(password, user);
 
     if (!user || !validatePassword) {
@@ -22,13 +25,13 @@ const login = asyncHandler(async (req, res, next) => {
     }
 
     //generate access token and refresh token 
-    const payload = { user_id: user.id, username, email: user.email };
+    const payload = { user_id: user.user_id, username, email: user.email };
 
     const access_token = jwtServices.generateToken(payload, JWT_SECRET, JWT_EXPIRY);
     const refresh_token = jwtServices.generateToken(payload, REFRESH_SECRET, REFRESH_EXPIRY);
 
     //save refresh token in the database
-    await authServices.createRefreshToken(user.id, refresh_token);
+    await authServices.createRefreshToken(user.user_id, refresh_token);
 
     res.cookie('refresh_token', refresh_token, {
         httpOnly: true,
@@ -80,8 +83,68 @@ const refresh = asyncHandler(async (req, res, next) => {
     return res.status(200).json(result)
 })
 
+const getUserDetails = asyncHandler(async (req, res, next) => {
+    const result = await authServices.getUserDetails()
+    return res.status(200).json(result)
+})
+
+const getUserDetailsById = asyncHandler(async (req, res, next) => {
+    const user_id = req.user.user_id;
+
+    const result = await authServices.getUserDetailsById(user_id)
+    return res.status(200).json(result)
+})
+
+const getUserPermission = asyncHandler(async (req, res, next) => {
+    const result = await authServices.getUserPermission(req.params.id);
+    return res.status(200).json(result);
+});
+
+const getUserList = asyncHandler(async (req, res, next) => {
+    const result = await authServices.getUserList();
+    return res.status(200).json(result);
+});
+
+const updateUserPermission = asyncHandler(async (req, res, next) => {
+    await authServices.updateUserPermission(req.params.id, req.body, req.user.user_id);
+    return res.status(200).json({
+        status: true,
+        message: "User permission updated successfully"
+    });
+});
+
+const changePassword = asyncHandler(async (req, res, next) => {
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await authServices.findUserById(req.user.user_id);
+
+    const validatePassword = await authServices.validatePassword(oldPassword, user?.dataValues);
+
+    if (!user || !validatePassword) {
+        return res.status(200).json({
+            status: false,
+            message: "Invalid old password"
+        });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+
+    await authServices.changePassword(req.user.user_id, hashedPassword);
+    return res.status(200).json({
+        status: true,
+        message: "Password changed successfully"
+    });
+});
+
 module.exports = {
     login,
     logout,
-    refresh
+    refresh,
+    getUserDetails,
+    getUserDetailsById,
+    getUserPermission,
+    getUserList,
+    updateUserPermission,
+    changePassword
 }

@@ -1,32 +1,44 @@
 {
-  "name": "psm_nepal_be",
+  "name": "yatayat_system",
   "version": "1.0.0",
-  "description": "PSM Nepal Website Backend",
+  "description": "yatayat_system be",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:seed": "sequelize-cli db:seed:all",
+    "db:backup": "mysqldump -u rayumabh_admin -p x&OAj_,4P?H^f@*0 rayumabh_yatayat > backup_$(date +%Y%m%d_%H%M%S).sql",
+    "db:deploy:check": "NODE_ENV=production node -e \"require('./src/config/database')\"",
+    "deploy:preflight": "npm run db:backup && npm run db:migrate",
+    "deploy": "npm run deploy:preflight && NODE_ENV=production pm2 startOrRestart ecosystem.config.js --env production"
   },
-  "author": "Prasanna Kumar Baniya",
+  "author": "yatayat",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.6.5",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "dayjs": "^1.11.18",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
-    "joi": "^17.11.1",
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
+    "multer": "^2.0.2",
     "mysql2": "^3.7.0",
+    "node-cron": "^4.2.1",
     "sequelize": "^6.35.2",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
+    "jest": "^30.1.1",
     "nodemon": "^3.0.2",
-    "sequelize-cli": "^6.6.2"
+    "sequelize-cli": "^6.6.2",
+    "supertest": "^7.1.4"
   }
 }
