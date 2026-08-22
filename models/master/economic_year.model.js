@@ -1,10 +1,20 @@
 const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../../config/database');
+const sequelize = require('../../src/config/database');
 
 class FunctionalYear extends Model {
   static async economicYearSetup(data) {
     return await FunctionalYear.create(data);
   }
+
+  ///check if that fun year alreedy exists
+ static async checkFunctionalYearExists(functional_year_start_bs, functional_year_end_bs) {
+  return await FunctionalYear.findOne({
+    where: {
+      functional_year_start_bs,
+      functional_year_end_bs,
+    },
+  });
+}
 
   static async setInactiveEconomicYear() {
     return await FunctionalYear.update({ status: 0 }, { where: { status: 1 } });
@@ -21,7 +31,7 @@ class FunctionalYear extends Model {
   }
 
   static async getEconomicYearInfo(id) {
-    return await FunctionalYear.findByPk(id);
+    return await FunctionalYear.findOne({ where: { functional_year_id: id } });
   }
 }
 

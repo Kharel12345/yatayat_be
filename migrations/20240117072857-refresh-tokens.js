@@ -21,7 +21,7 @@ module.exports = {
         allowNull: false,
         references: {
           model: "user",
-          key: 'id'
+          key: 'user_id'
         }
       },
       token: {

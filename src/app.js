@@ -1,43 +1,82 @@
-const express = require('express');
+const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
-const helmet = require('helmet');
-const cors = require('cors')
-const logger = require('./config/winstonLoggerConfig')
-const errorHandler = require('./utils/errorHandler');
-const { authRoutes } = require('./routes')
+const helmet = require("helmet");
+const cors = require("cors");
+const logger = require("./config/winstonLoggerConfig");
+const errorHandler = require("./utils/errorHandler");
+const { authRoutes, branchRoute } = require("./routes");
+const { ledgerRoutes, invoiceRoutes, cashInvoiceRoutes, receiptRoutes, cashReceiptRoutes, smsRoutes } = require("./routes/Accounting");
+const { accountReportRoute } = require('./routes/Report')
+// const SubscriptionTasks = require("./tasks/subscription_tasks");
 
-const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [];
+const {
+  economicYearRoute,
+  smsSettingInfoRoute,
+  vechileCategoryRoutes,
+  vechileSubCategoryRoutes,
+  vehicleRoute,
+  BillingTitleRoutes,
+  BillingTitleMappingInfoRoutes,
+  userRoutes,
+  uploadRoute,
+  messageSettingInfoRoute,
+} = require("./routes/master");
+
+const allowedOrigins = process.env.CORS_ORIGINS?.split(",") || [];
 const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl)
-        if (!origin) return callback(null, true);
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
 
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true, // if you're sending cookies or auth headers
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // if you're sending cookies or auth headers
 };
 
 app.use(cors(corsOptions));
-app.use(helmet())
+app.use(helmet());
 app.use(cookieParser());
-app.use(express.json())
+app.use(express.json());
 
-require('./config/database')
+// Load database configuration and models
+require("./config/database");
+require("../models"); // Load Sequelize models
+// Initialize scheduled tasks
+// SubscriptionTasks.initializeTasks();
 
 //routes here
-app.use('/api/auth', authRoutes)
+app.use("/api/auth", authRoutes);
+app.use("/api/accounting", ledgerRoutes);
+app.use("/api/master", economicYearRoute);
+app.use("/api/master", smsSettingInfoRoute);
+app.use("/api/master", vechileCategoryRoutes);
+app.use("/api/master", vechileSubCategoryRoutes);
+app.use("/api/master", vehicleRoute);
+app.use("/api/master", branchRoute);
+app.use("/api/master", BillingTitleRoutes);
+app.use("/api/master", BillingTitleMappingInfoRoutes);
+app.use("/api/master", userRoutes);
+app.use("/api/master", uploadRoute);
+app.use("/api/billing", invoiceRoutes);
+app.use("/api/cashinvoice", cashInvoiceRoutes);
+app.use("/api/receipt", receiptRoutes);
+app.use("/api/cash-receipt", cashReceiptRoutes);
+app.use("/api/report", accountReportRoute);
 
-app.use(errorHandler)
+app.use("/api/master", messageSettingInfoRoute);
+
+
+app.use(errorHandler);
 
 app.use((req, res, next) => {
-    logger.info(req.url)
-    res.status(404).json({ "message": "Page not found !!!" })
-})
+  logger.info(req.url);
+  res.status(404).json({ message: "Page not found !!!" });
+});
 
+module.exports = app;
 
-module.exports = app

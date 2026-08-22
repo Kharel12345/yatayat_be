@@ -10,10 +10,10 @@ const {
   validateAdDateAgainstFunctionalYear,
   isBackDate,
 } = require("../../middlewares/dateValidation");
-const { ledgerServices } = require("../../services/accounting");
 const { getCurrentValue } = require("../../utils/dbUtils")
 
 const logger = require("../../config/winstonLoggerConfig");
+const { ledgerServices } = require("../../services/accounting");
 
 const getledgerGrouplist = async (req, res, next) => {
   try {
@@ -30,7 +30,11 @@ const getledgerGrouplist = async (req, res, next) => {
 const getledgerSubGrouplist = async (req, res, next) => {
   try {
     const ledgerSubGroup = await ledgerServices.getledgerSubGrouplist();
-    return res.status(200).json(SUCCESS_API_FETCH(ledgerSubGroup));
+    return res.status(200).json({
+      status: true,
+      message: "Data found successfully!!!",
+      data: ledgerSubGroup
+    });
   } catch (error) {
     logger.error(
       `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
@@ -42,7 +46,7 @@ const getledgerSubGrouplist = async (req, res, next) => {
 const saveLedger = async (req, res, next) => {
   try {
     const {
-      ledger_name,
+      ledgername,
       master_ledger_group_id,
       ledger_sub_group_id,
       address,
@@ -56,10 +60,12 @@ const saveLedger = async (req, res, next) => {
     } = req.body;
 
     let calendar = new Nepali_Calendar();
+ 
+    
     let opening_balance_date_ad = calendar.BSToADConvert(
       opening_balance_date_bs
     );
-
+    
     let isValidDate = await validateAdDateAgainstFunctionalYear(
       functional_year_id,
       opening_balance_date_ad
@@ -81,28 +87,27 @@ const saveLedger = async (req, res, next) => {
     }
 
     //check for backdate
-    let allow_backdate_entry_ledger =
-      req.permission["ledger"] &&
-      req.permission["ledger"].includes("allow_backdate_entry_ledger");
-    if (!allow_backdate_entry_ledger) {
-      let result = isBackDate(opening_balance_date_ad);
-      if (result) {
-        return res.status(400).json({
-          status: false,
-          message: "You do not have permission for back date entry",
-        });
-      }
-    }
+    // let allow_backdate_entry_ledger =
+    //   req.permission["ledger"] &&
+    //   req.permission["ledger"].includes("allow_backdate_entry_ledger");
+    // if (!allow_backdate_entry_ledger) {
+    //   let result = isBackDate(opening_balance_date_ad);
+    //   if (result) {
+    //     return res.status(400).json({
+    //       status: false,
+    //       message: "You do not have permission for back date entry",
+    //     });
+    //   }
+    // }
 
     const jsonObject = {
-      ledger_name,
+      ledgername,
       master_ledger_group_id,
       ledger_sub_group_id,
       ledger_type: "Accounting",
       address,
       contact,
-      opening_balance_date_ad,
-      opening_balance_date_bs,
+      opening_balance_date: opening_balance_date_bs,
       opening_balance,
       transaction_type,
       status,
@@ -124,30 +129,42 @@ const saveLedger = async (req, res, next) => {
 
 const getLedgerPagination = async (req, res, next) => {
   try {
-    const ledgerName = req.query.ledgerName || "";
+    const ledgername = req.query.ledgerName || "";
     const status = parseInt(req.query.status);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const viewAll =
-      req.permission["ledger"] &&
-      req.permission["ledger"].includes("viewall_ledger");
+    // const viewAll =
+    //   req.permission["ledger"] &&
+    //   req.permission["ledger"].includes("viewall_ledger");
 
-    let { data, total } = await ledgerServices.getLedgerPagination(
+    let data = await ledgerServices.getLedgerPagination(
       limit,
       offset,
       status,
-      ledgerName,
-      viewAll,
+      ledgername,
+      // viewAll,
       req.user.user_id
     );
 
     return res.status(200).json({
       status: true,
       message: "Data found successfully!!!",
-      data: data,
-      total: total[0].total,
+      data: data.rows,
+      total: data.count,
     });
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+};
+
+const getAllLedgerList = async (req, res, next) => {
+  try {
+    const ledger = await ledgerServices.getAllLedgerList();
+    return res.status(200).json(SUCCESS_API_FETCH(ledger));
   } catch (error) {
     logger.error(
       `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
@@ -160,7 +177,7 @@ const updateLedger = async (req, res, next) => {
   try {
     const {
       ledger_id,
-      ledger_name,
+      ledgername,
       master_ledger_group_id,
       ledger_sub_group_id,
       address,
@@ -207,13 +224,13 @@ const updateLedger = async (req, res, next) => {
 
     const jsonObject = {
       ledger_id,
-      ledger_name,
+      ledgername,
       master_ledger_group_id,
       ledger_sub_group_id,
       address,
       contact,
-      opening_balance_date_ad,
-      opening_balance_date_bs,
+      // opening_balance_date_ad,
+      opening_balance_date: opening_balance_date_bs,
       opening_balance,
       transaction_type,
       status,
@@ -264,7 +281,7 @@ const getLedgerMappingPagination = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
-    let { data, total } = await ledgerServices.getLedgerMappingPagination(
+    const data = await ledgerServices.getLedgerMappingPagination(
       limit,
       offset
     );
@@ -272,8 +289,8 @@ const getLedgerMappingPagination = async (req, res, next) => {
     return res.status(200).json({
       status: true,
       message: "Data found successfully!!!",
-      data: data,
-      total: total[0].total,
+      data: data?.rows,
+      total: data?.count,
     });
   } catch (error) {
     logger.error(
@@ -295,6 +312,18 @@ const getActiveLedger = async (req, res, next) => {
   }
 };
 
+const getBankLedger = async (req, res, next) => {
+  try {
+    const ledger = await ledgerServices.getBankLedger();
+    return res.status(200).json(SUCCESS_API_FETCH(ledger));
+  } catch (error) {
+    logger.error(
+      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
+    );
+    return next(error);
+  }
+}
+
 module.exports = {
   getledgerGrouplist,
   getledgerSubGrouplist,
@@ -304,4 +333,6 @@ module.exports = {
   saveLedgerMapping,
   getLedgerMappingPagination,
   getActiveLedger,
+  getAllLedgerList,
+  getBankLedger
 };

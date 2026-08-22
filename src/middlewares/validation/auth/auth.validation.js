@@ -15,6 +15,19 @@ const validateLogin = async (req, res, next) => {
     next(error)
 }
 
+const validatePasswordChange = async (req, res, next) => {
+    const Schema = Joi.object({
+        oldPassword: Joi.string().required(),
+        newPassword: Joi.string().required().pattern(new RegExp(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/
+        )),
+    });
+    const { error } = Schema.validate(req.body);
+    if (error) {
+        return next(error);
+    }
+    next(error);
+}
+
 const validateToken = async (req, res, next) => {
     const Schema = Joi.object({
         refresh_token: Joi.string().required()
@@ -29,5 +42,6 @@ const validateToken = async (req, res, next) => {
 
 module.exports = {
     validateLogin,
-    validateToken
+    validateToken,
+    validatePasswordChange
 }

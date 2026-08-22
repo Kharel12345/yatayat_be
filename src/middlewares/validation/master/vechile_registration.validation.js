@@ -1,0 +1,90 @@
+// validations/vehicle.validation.js
+const Joi = require("joi");
+const fs = require("fs");
+const { cleanupUploadedFiles } = require("../../../utils/fileCleanup");
+
+const driverSchema = Joi.object({
+  driverName: Joi.string().required().allow(""),
+  registrationNumber: Joi.string().allow(""),
+  panNo: Joi.string().allow(""),
+  licenseNo: Joi.string().allow(""),
+  address: Joi.string().allow(""),
+  photo: Joi.string().allow(""),
+});
+
+const operatorSchema = Joi.object({
+  operatorName: Joi.string().allow(""),
+  address: Joi.string().allow(""),
+  registrationNumber: Joi.string().allow(""),
+  panNo: Joi.string().allow(""),
+  photo: Joi.string().allow(""),
+});
+
+const helperSchema = Joi.object({
+  helperName: Joi.string().allow(""),
+  address: Joi.string().allow(""),
+  registrationNumber: Joi.string().allow(""),
+  panNo: Joi.string().allow(""),
+  photo: Joi.string().allow(""),
+});
+
+const vehicleSchema = Joi.object({
+  vehicleNo: Joi.string().required(),
+  ownerName: Joi.string().required(),
+  address: Joi.string().required(),
+  panNo: Joi.string().allow(""),
+  membershipNo: Joi.string().allow(""),
+  contact: Joi.string().allow(""),
+  photo: Joi.string().allow(""),
+  billBookPhoto: Joi.string().allow(""),
+  licensePaper: Joi.string().allow(""),
+  insurancePaper: Joi.string().allow(""),
+  routePermit: Joi.string().allow(""),
+  jachPass: Joi.string().allow(""),
+  registrationDate: Joi.date().required(),
+  categoryId: Joi.number().required(),
+  subCategoryId: Joi.number().required(),
+  functionalYear: Joi.string().required(),
+  branchId: Joi.number().required(),
+  organization: Joi.string().required().allow("", null),
+  drivers: Joi.array().items(driverSchema).allow(null).required(),
+  subscriptionType: Joi.string().valid('monthly', 'yearly', 'both').required(),
+  // status: Joi.number().valid(0, 1).default(1),
+  operator: operatorSchema,
+  helper: helperSchema,
+});
+
+const vechileRegistrationValidation = (req, res, next) => {
+
+  try {
+    // Parse JSON fields if they come as strings (from form-data)
+    ["drivers", "operator", "helper"].forEach((field) => {
+      if (req.body[field] && typeof req.body[field] === "string") {
+        try {
+          req.body[field] = JSON.parse(req.body[field]);
+        } catch (err) {
+          req.body[field] = req.body[field];
+        }
+      }
+    });
+
+    // Validate the vehicle data
+    const { error } = vehicleSchema.validate(req.body, { abortEarly: false });
+
+    if (error) {
+      // Clean up all uploaded files if validation fails
+      cleanupUploadedFiles(req.files, req.file);
+      return next(error);
+    }
+
+    next();
+  } catch (err) {
+    // Clean up uploaded files if any error occurs
+    cleanupUploadedFiles(req.files, req.file);
+    next(err);
+  }
+};
+
+module.exports = {
+  vechileRegistrationValidation,
+};
