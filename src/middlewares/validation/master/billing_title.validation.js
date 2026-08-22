@@ -4,21 +4,25 @@ const Joi = require('joi');
 const createBillingTitleSchema = Joi.object({
   billing_title_code: Joi.number().integer().required(),
   billing_title: Joi.string().required(),
+   billing_title_english: Joi.string(),
   rate: Joi.number().precision(2).required(),
   branch_id: Joi.number().integer().required(),
   functional_year_id: Joi.number().integer().required(),
   created_by: Joi.number().integer().required(),
-  status: Joi.number().integer().valid(0, 1)
+  status: Joi.number().integer().valid(0, 1),
+  show_in_billing: Joi.boolean()
 });
 
 const updateBillingTitleSchema = Joi.object({
   billing_title_code: Joi.number().integer(),
   billing_title: Joi.string(),
+   billing_title_english: Joi.string().required(),
   rate: Joi.number().precision(2),
   branch_id: Joi.number().integer(),
   functional_year_id: Joi.number().integer(),
   created_by: Joi.number().integer(),
-  status: Joi.number().integer().valid(0, 1)
+  status: Joi.number().integer().valid(0, 1),
+  show_in_billing: Joi.boolean()
 });
 
 

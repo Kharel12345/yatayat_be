@@ -386,6 +386,7 @@ const updateInvoice = async (id, updateData) => {
       vehicle_id,
       billing_title_id,
       amount,
+      discount,               
       bill_date_bs,
       expiry_date_bs,
       payment_method,
@@ -430,6 +431,22 @@ const updateInvoice = async (id, updateData) => {
       newExpiryDate = np.BSToADConvert(expiry_date_bs);
     }
 
+    // CALCULATE NET AMOUNT WITH DISCOUNT
+    const grossAmount = amount !== undefined ? parseFloat(amount) : parseFloat(invoice.rate || 0);
+    const discountAmount = discount !== undefined ? parseFloat(discount) : parseFloat(invoice.discount_amount || 0);
+    
+    // Validate discount
+    if (discountAmount < 0) {
+      throw new ValidationError("Discount cannot be negative");
+    }
+    if (discountAmount > grossAmount) {
+      throw new ValidationError(
+        `Discount amount (₹${discountAmount.toFixed(2)}) cannot exceed the total amount (₹${grossAmount.toFixed(2)})`
+      );
+    }
+    
+    const netAmount = +(grossAmount - discountAmount).toFixed(2);
+
     // Determine payment method/mode changes
     const newPaymentMethod = (
       payment_method ||
@@ -445,7 +462,6 @@ const updateInvoice = async (id, updateData) => {
     const entries = await AccountingTransactionDetail.findAll({
       where: { comes_from: "SALES ENTRY", table_id: id },
       transaction,
-      lock: transaction.LOCK.UPDATE,
     });
 
     if (!entries || entries.length < 2) {
@@ -474,8 +490,6 @@ const updateInvoice = async (id, updateData) => {
       });
       const salesLedgerId = salesMap?.id;
 
-      const amountVal =
-        amount !== undefined ? amount : Number(invoice.total_amount);
       const functionalYearId =
         functional_year_id ||
         debitRow?.functional_year_id ||
@@ -512,12 +526,12 @@ const updateInvoice = async (id, updateData) => {
         creditLedgerId = salesLedgerId || creditLedgerId;
       }
 
-      // Update entries
+      // UPDATE ENTRIES WITH NET AMOUNT (after discount)
       if (debitRow) {
         await debitRow.update(
           {
             ledger_id: debitLedgerId,
-            debit: amountVal,
+            debit: netAmount,        // FIXED: Using netAmount
             credit: 0.0,
             voucher_date_ad: newInvoiceDate,
             voucher_date_bs: newInvoiceDateBs,
@@ -536,7 +550,7 @@ const updateInvoice = async (id, updateData) => {
         await creditRow.update(
           {
             ledger_id: creditLedgerId,
-            credit: amountVal,
+            credit: netAmount,        
             debit: 0.0,
             voucher_date_ad: newInvoiceDate,
             voucher_date_bs: newInvoiceDateBs,
@@ -552,13 +566,14 @@ const updateInvoice = async (id, updateData) => {
       }
     }
 
-    // Update main invoice
+    // UPDATE MAIN INVOICE WITH BOTH GROSS AND DISCOUNT
     await invoice.update(
       {
         vehicle_id: newVehicleId,
         billing_title_id: billing_title_id || invoice.billing_title_id,
-        rate: amount !== undefined ? amount : invoice.rate,
-        total_amount: amount !== undefined ? amount : invoice.total_amount,
+        rate: grossAmount,                    // Store gross amount
+        discount_amount: discountAmount,      // Store discount
+        total_amount: netAmount,              // Store net amount
         invoice_date: newInvoiceDate,
         invoice_date_bs: newInvoiceDateBs,
         expiry_date: newExpiryDate,
@@ -583,6 +598,7 @@ const updateInvoice = async (id, updateData) => {
   } catch (error) {
     await transaction.rollback();
     if (error instanceof NotFoundError) throw error;
+    if (error instanceof ValidationError) throw error;
     throw new DatabaseError("Error updating invoice", error);
   }
 };

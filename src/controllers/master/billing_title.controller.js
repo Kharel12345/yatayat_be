@@ -4,10 +4,29 @@ const logger = require("../../config/winstonLoggerConfig");
 const { DATA_SAVED, SUCCESS_API_FETCH } = require("../../helpers/response");
 const { BillingTitleService } = require("../../services/master");
 const { BillingTitleInfo } = require("../../../models/master");
+const nepaliOnly = /^[\u0900-\u097F\s]+$/;
+const englishOnly = /^[A-Za-z\s]+$/;
 
 
 const createBillingTitle = async (req, res, next) => {
   try {
+    const { billing_title, billing_title_english, } = req.body;
+
+    // Validate Nepali title
+    if (!nepaliOnly.test(billing_title.trim())) {
+      return res.status(400).json({
+        status: false,
+        message: "Billing title must contain Nepali characters only!!!",
+      });
+    }
+
+    // Validate English title
+    if (!englishOnly.test(billing_title_english.trim())) {
+      return res.status(400).json({
+        status: false,
+        message: "English billing title must contain English letters only!!!",
+      });
+    }
 
     const existing = await BillingTitleService.checkBillingTitleExists({
       billing_title_code: req.body.billing_title_code,
@@ -16,7 +35,7 @@ const createBillingTitle = async (req, res, next) => {
     if (existing) {
       return res.status(208).json({
         status: false,
-        message: "Billing code already exits!!! "
+        message: "Billing code already exists!!!",
       });
     }
     const newTitle = await BillingTitleService.createBillingTitle(
@@ -65,6 +84,32 @@ const getBillingTitleById = async (req, res, next) => {
 
 const updateBillingTitle = async (req, res, next) => {
   try {
+    const {
+      billing_title,
+      billing_title_english,
+    } = req.body;
+
+    // Validate Nepali title if provided
+    if (
+      billing_title !== undefined &&
+      !nepaliOnly.test(billing_title.trim())
+    ) {
+      return res.status(400).json({
+        status: false,
+        message: "Billing title must contain Nepali characters only!!!",
+      });
+    }
+
+    // Validate English title if provided
+    if (
+      billing_title_english !== undefined &&
+      !englishOnly.test(billing_title_english.trim())
+    ) {
+      return res.status(400).json({
+        status: false,
+        message: "English billing title must contain English letters only!!!",
+      });
+    }
 
     const existing = await BillingTitleInfo.findOne({
       where: {
@@ -74,11 +119,10 @@ const updateBillingTitle = async (req, res, next) => {
       },
     });
 
-
     if (existing) {
       return res.status(208).json({
         status: false,
-        message: "Billing title code already exits!!! "
+        message: "Billing title code already exists!!!",
       });
     }
 
@@ -89,7 +133,7 @@ const updateBillingTitle = async (req, res, next) => {
 
     res.status(201).json({
       status: true,
-      message: "Billing title updated successfully!!!"
+      message: "Billing title updated successfully!!!",
     });
 
   } catch (error) {

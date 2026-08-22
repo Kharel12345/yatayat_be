@@ -1,7 +1,6 @@
 const { DataTypes, Model } = require("sequelize");
 const sequelize = require("../../src/config/database");
 const BranchInfo = require("../branch.model");
- 
 
 const BillingTitleInfo = sequelize.define(
   "BillingTitleInfo",
@@ -11,11 +10,17 @@ const BillingTitleInfo = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
+    // Default / original title in Nepali
     billing_title_code: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    //thisn is in english
     billing_title: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+      billing_title_english: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
@@ -35,6 +40,11 @@ const BillingTitleInfo = sequelize.define(
       type: DataTypes.TINYINT,
       defaultValue: 1,
     },
+    show_in_billing: {
+      type: DataTypes.TINYINT,
+      allowNull: false,
+      defaultValue: 0,
+    },
     created_by: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -45,7 +55,7 @@ const BillingTitleInfo = sequelize.define(
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-  }
+  },
 );
 
 BillingTitleInfo.belongsTo(BranchInfo, {
@@ -59,7 +69,7 @@ BillingTitleInfo.associate = (models) => {
   if (models.VehicleSubscription) {
     BillingTitleInfo.hasMany(models.VehicleSubscription, {
       foreignKey: "billing_title_id",
-      as: "subscriptions"
+      as: "subscriptions",
     });
   }
 };

@@ -77,14 +77,20 @@ const createInvoiceSchema = Joi.object({
 });
 
 const updateInvoiceSchema = Joi.object({
-  // Existing fields
-  status: Joi.string()
-    .valid("pending", "paid", "overdue", "cancelled")
-    .optional()
-    .messages({
-      "string.base": "Status must be a string",
-      "any.only": "Status must be one of: pending, paid, overdue, cancelled",
-    }),
+  // Allow id — frontend includes it in the PUT body
+  id: Joi.number().integer().positive().optional().messages({
+    "number.base": "ID must be a number",
+    "number.integer": "ID must be an integer",
+    "number.positive": "ID must be a positive number",
+  }),
+
+  // Fixed: match createInvoiceSchema's numeric 0/1 status
+  // (frontend sends status: 1 or 0, not a string like "paid")
+  status: Joi.number().valid(0, 1).optional().messages({
+    "number.base": "Status must be a number",
+    "any.only": "Status must be either 0 (Inactive) or 1 (Active)",
+  }),
+
   payment_mode: Joi.string()
     .valid("cash", "credit", "bank_transfer", "online", "cheque")
     .optional()
@@ -138,6 +144,12 @@ const updateInvoiceSchema = Joi.object({
     }),
     otherwise: Joi.number().integer().positive().optional(),
   }),
+
+  qrRemarks: Joi.string().max(500).optional().messages({
+    "string.base": "QR Remarks must be a string",
+    "string.max": "QR Remarks cannot exceed 500 characters",
+  }),
+
   receipt_no: Joi.string().max(500).optional().messages({
     "string.base": "Receipt number must be a string",
     "string.max": "Receipt number cannot exceed 500 characters",
@@ -154,11 +166,10 @@ const updateInvoiceSchema = Joi.object({
   }),
   //discount part
   discount: Joi.number().min(0).optional().messages({
-  "number.base": "Discount must be a number",
-  "number.min": "Discount cannot be negative",
-}),
+    "number.base": "Discount must be a number",
+    "number.min": "Discount cannot be negative",
+  }),
 }).min(1);
-
 const getInvoicesSchema = Joi.object({
   page: Joi.number().integer().positive().optional().default(1).messages({
     "number.base": "Page must be a number",
