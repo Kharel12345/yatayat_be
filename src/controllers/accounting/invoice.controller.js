@@ -259,8 +259,6 @@ const getVehicleExpiryDate = async (req, res, next) => {
     const lastExpiry = await invoiceServices.getVehicleExpiryDate(req.query);
     console.log("lastExpiry", lastExpiry);
 
-    let dateOfExpiry = null;
-
     // Fetch billing title mapping
     const billingTitleMapped =
       await billingTitleMappingService.getBillingMappedByBillingTitle(
@@ -270,23 +268,45 @@ const getVehicleExpiryDate = async (req, res, next) => {
     const billing_label =
       billingTitleMapped?.dataValues?.labelInfo?.dataValues?.label_name;
 
-    // use dayjs to handle date logic
+    // No mapping found at all 
+    if (!billingTitleMapped) {
+      return res.status(200).json({
+        success: false,
+        message:
+          "This billing title has not been mapped to a category (yearly/monthly). Please map it first under Billing Title Mapping.",
+      });
+    }
+
+    if (
+      billing_label !== "yearly" &&
+      billing_label !== "monthly" &&
+      billing_label !== "both"
+    ) {
+      return res.status(200).json({
+        success: false,
+        message: `This billing title is mapped with an unrecognized label ("${billing_label}"). Expected yearly, monthly, or both.`,
+      });
+    }
     let baseDate = lastExpiry?.expiry_date
       ? lastExpiry.expiry_date
-      : getCurrentDateTime(); // if no last expiry → today
+      : getCurrentDateTime(); 
 
+    let dateOfExpiry;
     if (billing_label === "yearly" || billing_label === "both") {
       dateOfExpiry = moment(baseDate).add(1, "year").toDate();
-    } else if (billing_label === "monthly") {
+    } else {
+      // monthly
       dateOfExpiry = moment(baseDate).add(1, "month").toDate();
     }
 
-    dateOfExpiry = calendar.ADToBsConvert(moment(dateOfExpiry).format("YYYY-MM-DD"));
+    const bsExpiry = calendar.ADToBsConvert(
+      moment(dateOfExpiry).format("YYYY-MM-DD")
+    );
 
     return res.status(200).json({
       success: true,
       message: "Vehicle expiry date fetched successfully",
-      data: dateOfExpiry,
+      data: bsExpiry,
     });
   } catch (error) {
     console.error("Error fetching vehicle expiry date:", error);

@@ -432,8 +432,18 @@ const updateInvoice = async (id, updateData) => {
     }
 
     // CALCULATE NET AMOUNT WITH DISCOUNT
-    const grossAmount = amount !== undefined ? parseFloat(amount) : parseFloat(invoice.rate || 0);
-    const discountAmount = discount !== undefined ? parseFloat(discount) : parseFloat(invoice.discount_amount || 0);
+    const grossAmount =
+      amount !== undefined && amount !== ""
+        ? parseFloat(amount)
+        : parseFloat(invoice.rate || 0);
+    const rawDiscount =
+      discount !== undefined && discount !== null && discount !== ""
+        ? parseFloat(discount)
+        : parseFloat(invoice.discount_amount || 0);
+    const discountAmount = isNaN(rawDiscount) ? 0 : rawDiscount;
+    if (isNaN(grossAmount)) {
+      throw new ValidationError("Amount must be a valid number");
+    }
     
     // Validate discount
     if (discountAmount < 0) {

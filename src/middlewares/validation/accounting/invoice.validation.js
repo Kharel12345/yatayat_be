@@ -1,7 +1,7 @@
 const Joi = require("joi");
 
 const createInvoiceSchema = Joi.object({
-  receipt_no: Joi.string().max(500).optional().messages({
+  receipt_no: Joi.string().max(500).allow("").optional().messages({
     "string.base": "Remarks must be a string",
     "string.max": "Remarks cannot exceed 500 characters",
   }),
@@ -30,7 +30,7 @@ const createInvoiceSchema = Joi.object({
       "any.only":
         "Payment mode must be one of: cash, card, bank_transfer, online, cheque",
     }),
-  remarks: Joi.string().max(500).optional().messages({
+  remarks: Joi.string().max(500).allow("").optional().messages({
     "string.base": "Remarks must be a string",
     "string.max": "Remarks cannot exceed 500 characters",
   }),
@@ -53,7 +53,7 @@ const createInvoiceSchema = Joi.object({
     "number.integer": "Bank ID must be an integer",
     "number.positive": "Bank ID must be a positive number",
   }),
-  qrRemarks: Joi.string().max(500).optional().messages({
+  qrRemarks: Joi.string().max(500).allow("").optional().messages({
     "string.base": "Remarks must be a string",
     "string.max": "Remarks cannot exceed 500 characters",
   }),
@@ -102,7 +102,7 @@ const updateInvoiceSchema = Joi.object({
   payment_date: Joi.date().optional().messages({
     "date.base": "Payment date must be a valid date",
   }),
-  remarks: Joi.string().max(500).optional().messages({
+  remarks: Joi.string().max(500).allow("").optional().messages({
     "string.base": "Remarks must be a string",
     "string.max": "Remarks cannot exceed 500 characters",
   }),
@@ -142,15 +142,15 @@ const updateInvoiceSchema = Joi.object({
       "number.positive": "Bank ID must be a positive number",
       "any.required": "Bank ID is required for bank/online payments",
     }),
-    otherwise: Joi.number().integer().positive().optional(),
+    otherwise: Joi.number().integer().positive().allow(null).optional(),
   }),
 
-  qrRemarks: Joi.string().max(500).optional().messages({
+  qrRemarks: Joi.string().max(500).allow("").optional().messages({
     "string.base": "QR Remarks must be a string",
     "string.max": "QR Remarks cannot exceed 500 characters",
   }),
 
-  receipt_no: Joi.string().max(500).optional().messages({
+  receipt_no: Joi.string().max(500).allow("").optional().messages({
     "string.base": "Receipt number must be a string",
     "string.max": "Receipt number cannot exceed 500 characters",
   }),
