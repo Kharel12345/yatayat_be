@@ -4,6 +4,7 @@ const fs = require("fs");
 const { cleanupUploadedFiles } = require("../../../utils/fileCleanup");
 
 const driverSchema = Joi.object({
+  id: Joi.number().integer().positive().optional(),
   driverName: Joi.string().required().allow(""),
   registrationNumber: Joi.string().allow(""),
   panNo: Joi.string().allow(""),

@@ -241,10 +241,18 @@ const updateVehicle = async (req, res, next) => {
       logger.info(`Cleaned up ${allNewFilesToCleanup.length} new files after update failure`);
     }
     
-    logger.error(
-      `{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`
-    );
-    return next(error);
+    logger.error(`{ Api:${req.url}, Error:${error.message}, stack:${error.stack} }`);
+
+    // Return error details to caller to aid debugging (will show in frontend console)
+    try {
+      return res.status(500).json({
+        error: error.message,
+        stack: error.stack ? String(error.stack) : undefined,
+      });
+    } catch (sendErr) {
+      // Fallback to next if response cannot be sent
+      return next(error);
+    }
   }
 };
 

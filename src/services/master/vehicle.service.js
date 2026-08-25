@@ -225,7 +225,7 @@ const getVehiclesPaginated = async (page = 1, limit = 10, filters = {}) => {
     include: [
       { model: Operator, as: "operator", required: false },
       { model: Helper, as: "helper", required: false },
-      { model: Driver, as: "drivers", required: false },
+      { model: Driver, as: "drivers", where: { status: 1 }, required: false },
     ],
     limit: parseInt(limit),
     offset: parseInt(offset),
@@ -411,15 +411,40 @@ const updateVehicle = async (id, data) => {
         )
         .map((d) => ({ ...d, vehicleId: id, status: 1 }));
 
-      // Mark all drivers inactive first
-      await Driver.update(
-        { status: 0 },
-        { where: { vehicleId: id }, transaction }
-      );
+      // Separate incoming drivers into those with an id (update) and without (create)
+      const driversWithId = validDrivers.filter((d) => d.id);
+      const driversWithoutId = validDrivers.filter((d) => !d.id);
 
-      // Add new active drivers if present
-      if (validDrivers.length > 0) {
-        await Driver.bulkCreate(validDrivers, { transaction });
+      // Update existing drivers by id
+      for (const drv of driversWithId) {
+        const { id: driverIdRaw, ...rest } = drv;
+        const driverId = Number(driverIdRaw);
+        if (Number.isNaN(driverId)) continue; // skip invalid ids
+        // Ensure we only update the driver belonging to this vehicle
+        await Driver.update(
+          { ...rest },
+          { where: { id: driverId, vehicleId: id }, transaction }
+        );
+      }
+
+      // Create new drivers (those without id)
+      if (driversWithoutId.length > 0) {
+        await Driver.bulkCreate(driversWithoutId, { transaction });
+      }
+
+      // Soft-delete any existing drivers that were not included in the incoming list
+      const incomingIds = driversWithId
+        .map((d) => Number(d.id))
+        .filter((n) => !Number.isNaN(n));
+
+      if (incomingIds.length > 0) {
+        await Driver.update(
+          { status: 0 },
+          { where: { vehicleId: id, id: { [Op.notIn]: incomingIds } }, transaction }
+        );
+      } else {
+
+        await Driver.update({ status: 0 }, { where: { vehicleId: id }, transaction });
       }
     }
 
